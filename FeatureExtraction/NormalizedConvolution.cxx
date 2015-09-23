@@ -28,25 +28,14 @@
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkSmoothingRecursiveGaussianImageFilter.h"
+#include "itkMaskImageFilter.h"
 #include "itkMultiplyImageFilter.h"
 #include "itkDivideImageFilter.h"
 
+#include "Path.h"
 
 const std::string VERSION("0.1");
 const std::string OUT_FILE_TYPE(".nii.gz");
-
-template<typename CharType>
-class Path {
-public:
-  typedef std::basic_string<CharType> StringType;
-  static StringType Join(StringType p1, StringType p2) {
-    CharType sep = '/';
-    p1.erase( p1.find_last_not_of( sep ) );
-    p1.append( 1, sep );
-    p1.append( p2.substr( p2.find_first_not_of( sep ) ) );
-    return p1;
-  }
-};
 
 int main(int argc, char *argv[]) {
   // Commandline parsing
@@ -170,18 +159,21 @@ int main(int argc, char *argv[]) {
   divideFilter->SetInput1( certaintyImageFilter->GetOutput() );
   divideFilter->SetInput2( certaintyFilter->GetOutput() );
 
+  // Setup the mask filter that applies the certainty as a mask
+  typedef itk::MaskImageFilter< ImageType, ImageType, ImageType > MaskFilterType;
+  MaskFilterType::Pointer maskFilter = MaskFilterType::New();
+  maskFilter->SetInput1( divideFilter->GetOutput() );
+  maskFilter->SetInput2( certaintyReader->GetOutput() );
   
   // Setup the writer
   typedef itk::ImageFileWriter< ImageType >  WriterType;
   WriterType::Pointer writer =  WriterType::New();
-  writer->SetInput( divideFilter->GetOutput() );
+  writer->SetInput( maskFilter->GetOutput() );
 
-  // TODO: Find library for path manipulation (or write one ...)
+  // Base file name for output images
   std::string baseFileName = Path<char>::Join( outDirPath, prefix );
   
   // Do the convolution for each scale
-  // Exiting part is wheter or not the SetSigma call is enough to
-  // force a recalculation of the Gaussian filter.
   for (auto scale : scales ) {
     certaintyImageFilter->SetSigma( scale );
     certaintyFilter->SetSigma( scale );
