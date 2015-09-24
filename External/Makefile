@@ -17,6 +17,8 @@ ITK_SRC_DIR = InsightToolkit-4.8.0
 ITK_ARCHIVE = ${ITK_SRC_DIR}.tar.gz
 ITK_BUILD_DIR = ITK-build
 
+all: tclap itk
+
 tclap: ${TCLAP_ARCHIVE}
 	${TAR} ${TAR_EXTRACT_FLAGS} $^ 
 
