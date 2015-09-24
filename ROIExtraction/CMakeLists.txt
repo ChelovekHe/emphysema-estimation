@@ -4,7 +4,8 @@ find_package( ITK REQUIRED )
 include( ${ITK_USE_FILE} )
 
 set( progs 
-  MaskedRandomCubicROIs
+  GenerateROIs
+  SampleROIs
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
