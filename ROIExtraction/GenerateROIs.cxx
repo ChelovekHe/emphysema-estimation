@@ -1,5 +1,6 @@
 /* 
-   Sample cubic ROIs at random from a masked volume.
+   Generate cubic ROIs at random such that the center of the ROIs lies inside
+   the mask.
 */
 #include <string>
 #include <vector>
@@ -7,40 +8,28 @@
 #include "tclap/CmdLine.h"
 
 #include "itkImageFileReader.h"
-#include "itkImageFileWriter.h"
-#include "itkRegionOfInterestImageFilter.h"
 #include "itkImageRandomConstIteratorWithIndex.h"
 
 #include "Path.h"
 
 const std::string VERSION("0.1");
-const std::string OUT_FILE_TYPE(".nii.gz");
+const std::string OUT_FILE_TYPE(".txt");
 
 int main(int argc, char *argv[]) {
   // Commandline parsing
-  TCLAP::CmdLine cmd("Calculate gradient based features.", ' ', VERSION);
-
-  // We need a single image
-  TCLAP::ValueArg<std::string> 
-    imageArg("i", 
-	     "image", 
-	     "Path to image.",
-	     true,
-	     "",
-	     "path", 
-	     cmd);
+  TCLAP::CmdLine cmd("Generate cubic ROIs.", ' ', VERSION);
 
   // We need a single mask
   TCLAP::ValueArg<std::string> 
     maskArg("m", 
 	    "mask", 
-	    "Path to mask. Must match image dimensions.",
+	    "Path to mask.",
 	    true,
 	    "",
 	    "path", 
 	    cmd);
   
-  // We need a directory for storing the resulting images
+  // We need a directory for storing the ROI info
   TCLAP::ValueArg<std::string> 
     outDirArg("o", 
 	      "outdir", 
@@ -50,13 +39,13 @@ int main(int argc, char *argv[]) {
 	      "path", 
 	      cmd);
   
-  // We can use a prefix to generate filenames
+  // We can use a prefix to generate filename
   TCLAP::ValueArg<std::string> 
     prefixArg("p", 
 	      "prefix", 
-	      "Prefix to use for output filenames",
+	      "Prefix to use for output filename",
 	      false, 
-	      "cubicroi__", 
+	      "", 
 	      "string", 
 	      cmd);
 
@@ -91,7 +80,6 @@ int main(int argc, char *argv[]) {
   }
 
   // Store the arguments
-  std::string imagePath( imageArg.getValue() );
   std::string maskPath( maskArg.getValue() );
   std::string outDirPath( outDirArg.getValue() );
   std::string prefix( prefixArg.getValue() );
@@ -105,53 +93,31 @@ int main(int argc, char *argv[]) {
   const unsigned int Dimension = 3;
 
   // TODO: Need to consider which pixeltype to use
-  typedef float PixelType;
-  typedef itk::Image< PixelType, Dimension >  ImageType;
-  typedef itk::ImageFileReader< ImageType > ReaderType;
   typedef unsigned char MaskPixelType;
   typedef itk::Image< MaskPixelType, Dimension >  MaskImageType;
   typedef itk::ImageFileReader< MaskImageType > MaskReaderType;
     
-  // Setup the readers
-  ReaderType::Pointer imageReader = ReaderType::New();
-  imageReader->SetFileName( imagePath );
-
+  // Setup the reader
   MaskReaderType::Pointer maskReader = MaskReaderType::New();
   maskReader->SetFileName( maskPath );
 
-  // Do we need to force an update of the mask reader?
   try {
     maskReader->Update();
   }
   catch ( itk::ExceptionObject &e ) {
     std::cerr << "Failed to Update mask reader." << std::endl
-	      << "Image: " << imagePath << std::endl
 	      << "Mask: " << maskPath << std::endl
-      //	      << "Base file name: " << baseFileName << std::endl
 	      << "ExceptionObject: " << e << std::endl;
     return EXIT_FAILURE;
   }
-  std::cout << maskReader->GetOutput()->GetLargestPossibleRegion() << std::endl;
-  
-  // Setup the ROI extraction filter 
-  typedef itk::RegionOfInterestImageFilter< ImageType, ImageType > ROIFilterType;
-  ROIFilterType::Pointer roiFilter = ROIFilterType::New();
-  roiFilter->SetInput( imageReader->GetOutput() );
-
+ 
   // Setup the region. We know the size but start index is set in the loop
   assert( roiSize > 0 );
-  ImageType::SizeType size;
+  MaskImageType::SizeType size;
   size.Fill( roiSize );
-  ImageType::RegionType roi;
+  MaskImageType::RegionType roi;
   roi.SetSize( size );
 
-  // Setup the writer
-  typedef itk::ImageFileWriter< ImageType >  WriterType;
-  WriterType::Pointer writer =  WriterType::New();
-  writer->SetInput( roiFilter->GetOutput() );
-  
-  // Base file name for output images
-  std::string baseFileName = Path<char>::Join( outDirPath, prefix );
 
   // Setup the random iterator that walks the mask image
   typedef itk::ImageRandomConstIteratorWithIndex< MaskImageType >
@@ -159,60 +125,52 @@ int main(int argc, char *argv[]) {
   RandomIteratorType
     maskIterator( maskReader->GetOutput(),
 		  maskReader->GetOutput()->GetLargestPossibleRegion() );
-
+  
   // We want one sample for each ROI
-    maskIterator.SetNumberOfSamples( nROIs );
+  maskIterator.SetNumberOfSamples( nROIs );
 
-  // We need to keep track of the ROI centers
-  std::vector< MaskImageType::IndexType > centers;
-  centers.reserve( nROIs );
+  // We need to store the ROI start index
+  std::vector< MaskImageType::IndexType > start;
+  start.reserve( nROIs );
 
+  // We need the image size so we can test that all ROIs are inside the image
+  auto imageSize =
+    maskReader->GetOutput()->GetLargestPossibleRegion().GetSize();
+  
   // Run the ROI sampling loop  
   for ( unsigned int nROI = 0; nROI < nROIs;  ) {
     for ( maskIterator.GoToBegin();
 	  !maskIterator.IsAtEnd() && nROI < nROIs;
 	  ++maskIterator ) {
       if ( maskIterator.Get() == 1 ) {
-	// We sample this location. The location is the center of the ROI, so we
-	// need to offset it by half the size
-	MaskImageType::IndexType start = maskIterator.GetIndex();
-	std::cout << "Got center " << start << std::endl;
-	centers.push_back( start );
-	start[0] -= size[0]/2;
-	start[1] -= size[1]/2;
-	start[2] -= size[2]/2;
-	roi.SetIndex( start );
-	roiFilter->SetRegionOfInterest( roi );
-
-	// Create a filename and write the ROI to disk
-	std::string outFile = baseFileName + "ROI_" + std::to_string( nROI )
-	  + OUT_FILE_TYPE;
-	writer->SetFileName( outFile );
-	try {
-	  writer->Update();
+	// We try to sample this location. The location is the center of the ROI
+	// so we need to offset it by half the size
+	MaskImageType::IndexType center = maskIterator.GetIndex();
+	center[0] -= size[0]/2;
+	center[1] -= size[1]/2;
+	center[2] -= size[2]/2;
+	if ( center[0] + size[0] < imageSize[0] &&
+	     center[1] + size[1] < imageSize[1] &&
+	     center[2] + size[2] < imageSize[2] ) {
+	  // Now we are happy and choose this as a sample.
+	  start.push_back( center );
+	  ++nROI;
 	}
-	catch ( itk::ExceptionObject &e ) {
-	  std::cerr << "Failed to process." << std::endl
-		    << "Image: " << imagePath << std::endl
-		    << "Mask: " << maskPath << std::endl
-		    << "Base file name: " << baseFileName << std::endl
-		    << "ExceptionObject: " << e << std::endl;
-	  return EXIT_FAILURE;
-	}
-	++nROI;
       }
     }
   }
 
+
   // Write the ROI info
-  std::string infoFile = baseFileName + "ROIInfo.txt";
+  std::string infoFile = Path<char>::Join( outDirPath,
+					   prefix + "ROIInfo" + OUT_FILE_TYPE );
   std::ofstream out( infoFile );
   if ( out.good() ) {
-    out << "ROI, center, size" << std::endl;
+    out << "ROI, start, size" << std::endl;
   }
-  for ( unsigned int i = 0; i < centers.size(); ++i ) {
+  for ( unsigned int i = 0; i < start.size(); ++i ) {
     if ( out.good() ) {
-      out << i << ", " << centers[i] << ", " << size << std::endl;
+      out << i << ", " << start[i] << ", " << size << std::endl;
     }
   }
   if ( !out.good() ) {
