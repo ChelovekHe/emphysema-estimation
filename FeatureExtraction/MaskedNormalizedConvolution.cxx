@@ -1,5 +1,7 @@
 /* 
-   Perform normalized convolution of a 0'th order filter with an image. 
+   Perform normalized convolution of a 0'th order filter with an image and mask
+   the result with the certainty, such that all voxels with 0 certainty are 
+   set to 0.
    See:
    Knutsson, Hans and Westin, Carl-Fredrik
    Normalized and Differential Convolution.
