@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 	      "prefix", 
 	      "Prefix to use for output filenames",
 	      false, 
-	      "normconv_", 
+	      "gradient_", 
 	      "string", 
 	      cmd);
 
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
   std::string baseFileName = Path<char>::Join( outDirPath, prefix );
 
   // Create a filename
-  std::string outFile = baseFileName + "GradientMagnitue" + OUT_FILE_TYPE;
+  std::string outFile = baseFileName + "GradientMagnitude" + OUT_FILE_TYPE;
   writer->SetFileName( outFile );
   try {
     writer->Update();

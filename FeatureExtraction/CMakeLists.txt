@@ -4,8 +4,8 @@ find_package( ITK REQUIRED )
 include( ${ITK_USE_FILE} )
 
 set( progs 
-  NormalizedConvolution
-  HessianFeatures
+  MaskedNormalizedConvolution
+  FiniteDifference_HessianFeatures
   FiniteDifference_GradientFeatures)
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )

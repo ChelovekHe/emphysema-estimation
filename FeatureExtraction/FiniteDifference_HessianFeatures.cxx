@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 	      "prefix", 
 	      "Prefix to use for output filenames",
 	      false, 
-	      "normconv_", 
+	      "hessian_", 
 	      "string", 
 	      cmd);
 
