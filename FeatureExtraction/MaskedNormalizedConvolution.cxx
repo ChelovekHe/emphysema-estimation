@@ -1,7 +1,7 @@
 /* 
-   Perform normalized convolution of a 0'th order filter with an image and mask
-   the result with the certainty, such that all voxels with 0 certainty are 
-   set to 0.
+   Perform normalized convolution of a 0'th order filter with an image and 
+   optionally mask the result with the certainty, such that all voxels with 0 
+   certainty are set to 0.
    See:
    Knutsson, Hans and Westin, Carl-Fredrik
    Normalized and Differential Convolution.
@@ -93,6 +93,16 @@ int main(int argc, char *argv[]) {
 	      "string", 
 	      cmd);
 
+  // Should the output be masked after convolution?
+  TCLAP::ValueArg<bool> 
+    maskOutputArg("m", 
+		  "maskoutput", 
+		  "Mask the output after convolution.",
+		  false, 
+		  false, 
+		  "boolean", 
+		  cmd);
+  
   
   try {
     cmd.parse(argc, argv);
@@ -109,6 +119,7 @@ int main(int argc, char *argv[]) {
   std::vector<double> scales( scalesArg.getValue() );
   std::string outDirPath( outDirArg.getValue() );
   std::string prefix( prefixArg.getValue() );
+  const bool maskOutput( maskOutputArg.getValue() );
 
   //// Commandline parsing is done ////
 
@@ -160,17 +171,24 @@ int main(int argc, char *argv[]) {
   DivideFilterType::Pointer divideFilter = DivideFilterType::New();
   divideFilter->SetInput1( certaintyImageFilter->GetOutput() );
   divideFilter->SetInput2( certaintyFilter->GetOutput() );
-
-  // Setup the mask filter that applies the certainty as a mask
-  typedef itk::MaskImageFilter< ImageType, ImageType, ImageType > MaskFilterType;
-  MaskFilterType::Pointer maskFilter = MaskFilterType::New();
-  maskFilter->SetInput1( divideFilter->GetOutput() );
-  maskFilter->SetInput2( certaintyReader->GetOutput() );
   
   // Setup the writer
   typedef itk::ImageFileWriter< ImageType >  WriterType;
   WriterType::Pointer writer =  WriterType::New();
-  writer->SetInput( maskFilter->GetOutput() );
+
+  // If we should mask the output we pass the divide filter through a mask filter
+  if ( maskOutput ) {
+    // Setup the mask filter that applies the certainty as a mask
+    typedef itk::MaskImageFilter< ImageType, ImageType, ImageType >
+      MaskFilterType;
+    MaskFilterType::Pointer maskFilter = MaskFilterType::New();
+    maskFilter->SetInput1( divideFilter->GetOutput() );
+    maskFilter->SetInput2( certaintyReader->GetOutput() );
+    writer->SetInput( maskFilter->GetOutput() );
+  }
+  else {
+    writer->SetInput( divideFilter->GetOutput() );
+  }
 
   // Base file name for output images
   std::string baseFileName = Path<char>::Join( outDirPath, prefix );
