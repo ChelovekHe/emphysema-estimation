@@ -4,7 +4,7 @@
 #include <vector>
 #include <cassert>
 
-#include "flann.hpp"
+#include "flann/flann.hpp"
 
 template< typename Distance >
 class KMeansClusterer {

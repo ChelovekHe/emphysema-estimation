@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "flann.hpp"
+#include "flann/flann.hpp"
 
 /*
   Compute weigthed Earth Movers Distance between samples represented by multiple

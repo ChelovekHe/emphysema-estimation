@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "flann.hpp"
+#include "flann/flann.hpp"
 
 /*
   Bag loss functions. See:
