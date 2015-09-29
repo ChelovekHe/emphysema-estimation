@@ -10,8 +10,10 @@ set( ITK_DIR "External/ITK-build" )
 find_package( ITK REQUIRED )
 include( ${ITK_USE_FILE} )
 
+include_directories( Classification/include )
+include_directories( Clustering/include )
 include_directories( External/tclap-1.2.1/include )
-include_directories( External/flann-1.8.4-src/src/cpp/flann )
+include_directories( External/flann-1.8.4-src/src/cpp )
 include_directories( Util/include )
 
 add_subdirectory( Clustering )
