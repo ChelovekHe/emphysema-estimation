@@ -2,5 +2,6 @@
 !Makefile
 !CMakeLists.txt
 !*.tar.gz
+!*.zip
 #!InsightToolkit-4.8.0.tar.gz
 #!tclap-1.2.1.tar.gz
