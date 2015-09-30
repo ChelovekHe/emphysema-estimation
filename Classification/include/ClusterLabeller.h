@@ -10,10 +10,10 @@
 #include "BagLoss.h"
 
 template< typename MatrixType, typename ClusterLabelType >
-class BagLabeller {
+class ClusterLabeller {
   typedef typename MatrixType::type ElementType;
   
-  BagLabeller(){}
+  ClusterLabeller(){}
 
   /*
     Let k be the number of clusters, h the number of bags and l the number of 
