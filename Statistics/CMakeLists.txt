@@ -3,12 +3,16 @@ project( EE_Statistics )
 find_package( ITK REQUIRED )
 include( ${ITK_USE_FILE} )
 
+set( LIBS
+  IO
+  )
+
 set( progs 
   DetermineHistogramBinWidtsFromPopulation
   MaskedImageHistogram
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
-  target_link_libraries( ${prog} ${ITK_LIBRARIES} )
+  target_link_libraries( ${prog} ${ITK_LIBRARIES} ${LIBS} )
   install( TARGETS ${prog} DESTINATION bin )
 endforeach( prog )

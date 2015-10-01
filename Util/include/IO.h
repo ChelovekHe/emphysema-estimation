@@ -1,36 +1,73 @@
 #ifndef __IO_h
 #define __IO_h
 
-#include <fstream>
 #include <string>
 #include <vector>
+#include <iostream>
+#include <sstream>
 
-#include "String.h"
+typedef std::pair< std::string, std::string > StringPair;
 
-std::vector< std::pair< std::string, std::string > >
-readPairList( std::string inPath ) {
-  typedef std::pair< std::string, std::string > StringPair;
-  
-  std::ifstream is( inPath );
-  std::vector< StringPair > pathPairs;
-  std::string line;
-  while ( is.good() ) {
-    std::getline( is, line );
-    if ( line.size() == 0 ) continue;
-    auto pos = line.find_first_of( ',' );
-    if ( pos == std::string::npos ) {
-      std::cerr << "Missing ','" << std::endl;
+template< typename CharT, typename InputIt >
+void
+writeSequenceAsText( std::ostream& out,
+		     InputIt begin,
+		     InputIt end,
+		     CharT sep=',' ) {
+  bool first = true;
+  while ( begin != end ) {
+    if ( first ) {
+      first = false;
     }
-    else {
-      pathPairs.emplace_back( std::make_pair( trim( line.substr(0, pos) ),
-					      trim( line.substr(pos + 1) )
-					      )
-			      );
+    else { 
+      out << sep;
     }
+    out  << *begin++;
   }
-      
-  return pathPairs;
 }
+
+// template< typename InputIt, typename CharT >
+// void
+// writeSequenceOfSequenceAsText( std::ostream& out,
+// 			       InputIt begin,
+// 			       InputIt end,
+// 			       CharT outer_sep='\n',
+// 			       CharT inner_sep=',' ) {
+//   bool first = true;
+//   while ( begin != end ) {
+//     if ( !first ) {
+//       out << outer_sep;
+//     }
+//     writeSequenceAsText( out, begin->begin(), begin->end() );
+//     first = false;
+//     ++begin;
+//   }
+// }
+
+
+template< typename ElemT, typename CharT, typename OutputIt >
+void
+readTextSequence( std::istream& is,
+		  OutputIt out,
+		  CharT sep=',' ) {
+  std::basic_string< CharT > s;
+  ElemT elem;
+  while ( is.good() ) {
+    std::getline( is, s, sep );
+    std::basic_istringstream< CharT >(s) >> elem;
+    *out++ = elem;
+  }
+}
+
+
+
+
+std::vector< StringPair >
+readPairList( std::string inPath, char sep=',' );
+
+
+
+
 
 
 #endif
