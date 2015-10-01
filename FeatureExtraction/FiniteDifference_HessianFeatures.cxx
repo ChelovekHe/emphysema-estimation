@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
   writer->SetInput( indexSelectionFilter->GetOutput() );
 
   // Base file name for output images
-  std::string baseFileName = Path<char>::Join( outDirPath, prefix );
+  std::string baseFileName = Path::join( outDirPath, prefix );
 
   std::vector< std::string > featureNames{
     "eig1", "eig2", "eig3","LoG", "Curvature", "Frobenius" 

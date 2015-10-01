@@ -209,8 +209,9 @@ int main(int argc, char *argv[]) {
 
   // Now we rescale from [min, max] to [0,10*nBins] and discretize to integers
   //
-  const unsigned int RANGE_MAX = 10*nBins;
   auto width = max - min;
+  const unsigned int RANGE_MAX = std::max( 100*nBins,
+					   static_cast<unsigned int>(width) );
   std::vector< unsigned int > histogram(RANGE_MAX + 1);
   for ( auto sample : samples ) {
     // This only works if we can trust that
@@ -242,9 +243,9 @@ int main(int argc, char *argv[]) {
 
   // Store the edges
   std::string fileName = prefix + timestamp() +  OUT_FILE_TYPE;
-  std::string outPath( Path<char>::Join( outDirPath, fileName ) );
+  std::string outPath( Path::join( outDirPath, fileName ) );
   std::ofstream out( outPath );
-  writeSequenceAsText< char > ( out, edges.begin(), edges.end() );
+  writeSequenceAsText( out, edges.begin(), edges.end() );
   if ( !out.good() ) {
     std::cerr << "Error writing to edges to file." << std::endl
 	      << "Out path: " << outPath << std::endl;

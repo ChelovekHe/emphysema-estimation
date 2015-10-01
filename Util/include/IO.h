@@ -8,12 +8,12 @@
 
 typedef std::pair< std::string, std::string > StringPair;
 
-template< typename CharT, typename InputIt >
+template< typename InputIt >
 void
 writeSequenceAsText( std::ostream& out,
 		     InputIt begin,
 		     InputIt end,
-		     CharT sep=',' ) {
+		     char sep=',' ) {
   bool first = true;
   while ( begin != end ) {
     if ( first ) {

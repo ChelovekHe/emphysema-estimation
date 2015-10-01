@@ -162,8 +162,8 @@ int main(int argc, char *argv[]) {
 
 
   // Write the ROI info
-  std::string infoFile = Path<char>::Join( outDirPath,
-					   prefix + "ROIInfo" + OUT_FILE_TYPE );
+  std::string infoFile = Path::join( outDirPath,
+				     prefix + "ROIInfo" + OUT_FILE_TYPE );
   std::ofstream out( infoFile );
   if ( out.good() ) {
     out << "ROI, start, size" << std::endl;
