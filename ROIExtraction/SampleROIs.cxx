@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   writer->SetInput( roiFilter->GetOutput() );
   
   // Base file name for output images
-  std::string baseFileName = Path<char>::Join( outDirPath, prefix );
+  std::string baseFileName = Path::join( outDirPath, prefix );
 
   // Read the ROI info and start the ROI sampling
   std::ifstream is( roiPath );

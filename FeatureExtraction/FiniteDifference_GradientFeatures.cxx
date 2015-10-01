@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
   writer->SetInput( maskFilter->GetOutput() );
 
   // Base file name for output images
-  std::string baseFileName = Path<char>::Join( outDirPath, prefix );
+  std::string baseFileName = Path::join( outDirPath, prefix );
 
   // Create a filename
   std::string outFile = baseFileName + "GradientMagnitude" + OUT_FILE_TYPE;

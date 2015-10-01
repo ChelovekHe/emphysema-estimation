@@ -14,6 +14,7 @@ include_directories( Classification/include )
 include_directories( Clustering/include )
 include_directories( External/tclap-1.2.1/include )
 include_directories( External/flann-1.8.4-src/src/cpp )
+include_directories( Statistics/include )
 include_directories( Util/include )
 
 add_subdirectory( Clustering )
