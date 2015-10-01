@@ -122,9 +122,9 @@ int main(int argc, char *argv[]) {
   MaskReaderType::Pointer maskReader = MaskReaderType::New();
 
   // Get the image/mask pairs
-  std::vector< std::pair< std::string, std::string > > imageMaskPairList;
+  std::vector< StringPair > imageMaskPairList;
   try {
-    imageMaskPairList = parseImageMaskList( infilePath );
+    imageMaskPairList = readPairList( infilePath );
   }
   catch (...) {
     std::cerr << "Could not read image/mask list" << std::endl;
@@ -134,9 +134,9 @@ int main(int argc, char *argv[]) {
 
   // Maybe reserve some memory?
   std::vector< PixelType > samples; 
-  PixelType min = std::numeric_limits< PixelType >::min();
-  PixelType max = std::numeric_limits< PixelType >::max();
-
+  PixelType min = std::numeric_limits< PixelType >::max();
+  PixelType max = std::numeric_limits< PixelType >::lowest();
+  
   // Typedefs for the iterators
   typedef itk::ImageRegionConstIterator< MaskImageType > IteratorType;
   typedef itk::ImageRandomConstIteratorWithIndex< MaskImageType >
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Now we rescale from [min, max] to [0,10*nBins] and discretize to integers
-  // 
+  //
   const unsigned int RANGE_MAX = 10*nBins;
   auto width = max - min;
   std::vector< unsigned int > histogram(RANGE_MAX + 1);
@@ -217,9 +217,14 @@ int main(int argc, char *argv[]) {
     //   std::ceil((max - min)/(max - min)) == 1
     // see DivisionTest which provides evidence that we can trust it.
     //++histogram.at( std::ceil( ((sample - min)/width) * (RANGE_MAX + 1) )  - 1 );
-    ++histogram.at( static_cast< unsigned int >( std::round( ((sample - min)/width) * (RANGE_MAX + 1) )  - 1 ) );
-  }
+    auto bin = std::round( ((sample - min)/width) * RANGE_MAX );
+    ++histogram.at( static_cast< unsigned int >( bin ) );
+  }  
   PixelType massPerBin = samples.size() / nBins;
+  std::cout << "Max : " << max << std::endl
+	    << "Min : " << min << std::endl
+	    << "Width : " << width << std::endl
+	    << "MassPerBin : " << massPerBin << std::endl;
   samples.clear();
 
   std::vector< PixelType > edges(nBins-1);
@@ -236,21 +241,15 @@ int main(int argc, char *argv[]) {
 
 
   // Store the edges
-
   std::string fileName = prefix + timestamp() +  OUT_FILE_TYPE;
   std::string outPath( Path<char>::Join( outDirPath, fileName ) );
   std::ofstream out( outPath );
-
-  for ( auto edge : edges ) {
-    if ( out.good() ) {
-      out << edge << " ";
-    }
-    else {
-      std::cerr << "Could not write to edge file." << std::endl
-		<< "Out path: " << outPath << std::endl;
-      return EXIT_FAILURE;
-    }
-  }
+  writeSequenceAsText< char > ( out, edges.begin(), edges.end() );
+  if ( !out.good() ) {
+    std::cerr << "Error writing to edges to file." << std::endl
+	      << "Out path: " << outPath << std::endl;
+    return EXIT_FAILURE;
+  }  
 
   return EXIT_SUCCESS;
 }
