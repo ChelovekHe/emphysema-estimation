@@ -6,7 +6,7 @@
 #include "flann/flann.hpp"
 
 /*
-  Compute weigthed Earth Movers Distance between samples represented by multiple
+  Compute weighted Earth Movers Distance between samples represented by multiple
   histograms. This allow us to represent an image as a collection of histograms 
   of filter responses, where each of the histograms can we given a weight.
 
@@ -16,16 +16,16 @@
 
  */
 template< typename T >
-struct WeigthedEarthMoversDistance {
+struct WeightedEarthMoversDistance {
 
   typedef T ElementType;
   typedef typename flann::Accumulator<T>::Type ResultType;
   typedef std::pair< unsigned int, ResultType > FeatureWeightType;
 
-  WeigthedEarthMoversDistance( std::initializer_list< FeatureWeightType > weights ) : m_Weigths( weights ) {}
+  WeightedEarthMoversDistance( std::initializer_list< FeatureWeightType > weights ) : m_Weights( weights ) {}
 
-  WeigthedEarthMoversDistance( FeatureWeightType* begin, FeatureWeightType* end )
-    : m_Weigths( begin, end ) {}
+  WeightedEarthMoversDistance( std::vector<FeatureWeightType> weights )
+    : m_Weights( weights ) {}
   
   template< typename ForwardIter1, typename ForwardIter2 >
   ResultType operator()( ForwardIter1 a, ForwardIter2 b, size_t size,
