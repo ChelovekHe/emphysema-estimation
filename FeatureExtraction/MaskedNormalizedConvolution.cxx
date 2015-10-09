@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
   // We need scales for the Gauss applicability function
   TCLAP::MultiArg<double> 
     scalesArg("s", 
-	      "scales", 
+	      "scale", 
 	      "Scales for the Gauss applicability function",
 	      true, 
 	      "double", 

@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
   // We need a single ROI file
   TCLAP::ValueArg<std::string> 
     roiArg("r", 
-	   "ROIs", 
+	   "roifile", 
 	   "Path to ROI file",
 	   true,
 	   "",
