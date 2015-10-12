@@ -1,9 +1,7 @@
 project( EE_FeatureExtraction )
 
-find_package( ITK REQUIRED )
-include( ${ITK_USE_FILE} )
-
-set( progs 
+set( progs
+  MaskedImageFilter
   MaskedNormalizedConvolution
   FiniteDifference_HessianFeatures
   FiniteDifference_GradientFeatures)
