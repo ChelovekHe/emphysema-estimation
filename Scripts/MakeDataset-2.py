@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 '''See ../Data/Dataset-2/README.md'''
 
-import sys, os, os.path, csv, glob, subprocess, re
+import sys, os, os.path, csv, glob, subprocess, re, math
 
 def main():
     dataset0Dir = '../Data/Dataset-0'
@@ -25,7 +25,7 @@ def main():
     roiSize = 41
     numBins = 41
     numSamples = 10000
-    scales = [(0.6 * math.sqrt(2.0)**i) for i in range(7)]
+    scales = ["%0.2f" % (0.6 * math.sqrt(2.0)**i) for i in range(7)]
     
     # Make the images-mask list
     print('Creating images-mask list')
@@ -42,7 +42,7 @@ def main():
     # so we need to repeat it
     mask = glob.glob( os.path.join( maskDir, '*lungs*' ) )
     scanNames = [os.path.basename(s)[:-14] for s in mask]
-    repeatMask = max(1, len(intensity)/len(mask))
+    repeatMask = int(max(1, len(intensity)/len(mask)))
     mask = sorted( mask * repeatMask )
     
     imagesMaskList = zip( intensity,
@@ -91,24 +91,26 @@ def main():
     maskPattern = os.path.join( roiDir, '*lungs*nii.gz' )
     maskPaths = sorted(glob.glob( maskPattern ))
     for featureName in featureNames:
-        pattern = os.path.join( roiDir, '*' + featureName + '*' )
-        paths = sorted(glob.glob( pattern ) )
-        if len(paths) > 0:
-            fileListPath = os.path.join(fileListDir, 'ROI' + featureName + '.csv')
-            try:
-                with open( fileListPath, 'w' ) as out:
-                    csv.writer( out ).writerows( zip(paths, maskPaths) )
-            except Exception as e:
-                print(e)
-            args = [
-                maskedHistogramScript,
-                fileListPath,
-                histogramDir,
-                "%d" % numBins,
-                "%d" % numSamples
-            ]
-            if subprocess.call(args) != 0:
-                print( 'Error creating histograms' )
+        for scale in scales:
+            pattern = os.path.join( roiDir, '*scale_' + scale + '*' + featureName + '*')
+            paths = sorted(glob.glob( pattern ) )
+            if len(paths) > 0:
+                fileListPath = os.path.join(fileListDir, 'ROI' + featureName + '_' + scale + '.csv')
+                try:
+                    with open( fileListPath, 'w' ) as out:
+                        csv.writer( out ).writerows( zip(paths, maskPaths) )
+                except Exception as e:
+                    print(e)
+                print( fileListPath )
+                args = [
+                    maskedHistogramScript,
+                    fileListPath,
+                    histogramDir,
+                    "%d" % numBins,
+                    "%d" % numSamples
+                ]
+                if subprocess.call(args) != 0:
+                    print( 'Error creating histograms' )
 
     # Now we need to concatenate the histogram responses into a matrix of
     # ROIs and histograms
@@ -120,7 +122,7 @@ def main():
             instance = []
             for featureName in featureNames:
                 for scale in scales:
-                    path = '%s_scale_%06f_%s_ROI_%05d_hist.txt' % (scanName, scale, featureName, roi)
+                    path = '%s_scale_%s0000_%s_ROI_%05d_hist.txt' % (scanName, scale, featureName, roi)
                     with open(os.path.join(histogramDir, path)) as f:
                         for row in csv.reader( f ):
                             for elem in row:
