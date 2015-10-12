@@ -9,7 +9,6 @@
 # 
 
 import os, os.path, subprocess, glob, re, sys, csv
-from Util import intersperse
 
 
 def main(argv=None):
