@@ -3,6 +3,7 @@
 */
 
 #include <array>
+#include <fstream>
 
 #include "flann/io/hdf5.h"
 #include "flann/flann.hpp"
@@ -11,6 +12,7 @@
 #include "WeightedEarthMoversDistance.h"
 #include "KMeansClusterer.h"
 #include "RuntimeMeasurement.h"
+#include "IO.h"
 
 const std::string VERSION = "1";
 
@@ -21,21 +23,11 @@ int main(int argc, char *argv[]) {
   TCLAP::ValueArg<std::string> 
     inputArg("i", 
 	     "input", 
-	     "Path to input data stored as an hdf5 file",
+	     "Path to input matrix stored as csv file",
 	     true,
 	     "",
 	     "path", 
 	     cmd);
-
-  // We need the name of the hdf dataset
-  TCLAP::ValueArg<std::string> 
-    datasetArg("d", 
-	       "dataset", 
-	       "Name of dataset in input",
-	       true,
-	       "",
-	       "path", 
-	       cmd);
 
   TCLAP::ValueArg<size_t> 
     nHistogramsArg("n", 
@@ -46,6 +38,16 @@ int main(int argc, char *argv[]) {
 		   "size_t", 
 		   cmd);
 
+  TCLAP::ValueArg<std::string> 
+    outputArg("i", 
+	      "output", 
+	      "Path to output file to write results to",
+	      true,
+	      "",
+	      "path", 
+	      cmd);
+
+  
   try {
     cmd.parse(argc, argv);
   } catch(TCLAP::ArgException &e) {
@@ -57,8 +59,8 @@ int main(int argc, char *argv[]) {
 
   // Store the arguments
   const std::string inputPath{ inputArg.getValue() };
-  const std::string datasetPath{ datasetArg.getValue() };
   const size_t nHistograms{ nHistogramsArg.getValue() };
+  const std::string outputPath{ outputArg.getValue() };
   
   //// Commandline parsing is done ////
   
@@ -67,8 +69,17 @@ int main(int argc, char *argv[]) {
   typedef KMeansClusterer< DistanceType > ClustererType;
   
   // Parse the data into a matrix
-  flann::Matrix< ElementType > instances;
-  flann::load_from_file( instances, inputPath, datasetPath );
+  std::ifstream is( inputPath );
+  if ( !is.good() ) {
+    std::cerr << "Error reading input." << std::endl
+	      << "inputPath: " << inputPath << std::endl;
+    return EXIT_FAILURE;
+  }
+  std::vector< ElementType > buffer;
+  char colSep = ',', rowSep = '\n';
+  auto dim =
+    readTextMatrix<ElementType>( is, std::back_inserter(buffer), colSep, rowSep );
+  flann::Matrix< ElementType > instances(&buffer[0], dim.first, dim.second);
   
   const std::array<size_t, 3> numberOfClusters{ 4, 16, 64 };
   const size_t numberOfBurninIterations{ 10 };
@@ -81,6 +92,11 @@ int main(int argc, char *argv[]) {
   assert( instances.cols % nHistograms == 0 );
   const size_t histSize{ instances.cols/nHistograms };
 
+  std::cout << "nRows " << instances.rows << std::endl
+	    << "nCols " << instances.cols << std::endl
+	    << "nHistograms " << nHistograms << std::endl
+	    << "histSize " << histSize << std::endl;
+  
   // All histograms have equal weight
   typedef DistanceType::FeatureWeightType FeatureWeightType;
   std::vector< FeatureWeightType >
@@ -88,22 +104,44 @@ int main(int argc, char *argv[]) {
       
   DistanceType dist( weights ); 
 
-  std::vector< double > measurements{ numberOfMeasurementIterations };
+  std::vector< double > measurements( numberOfMeasurementIterations );
   std::vector< std::pair< double, double > > statistics;
   
   for ( const auto k : numberOfClusters ) {
-    ClustererType clusterer( k, nHistograms, k, iterations, centers_init );
+    std::cout << "k = " << k << std::endl;
+    int branching = k;
+    ClustererType clusterer( k, instances.cols, branching, iterations, centers_init );
+    std::cout << "Burning " << numberOfBurninIterations << " measurements."
+	      << std::endl;
     for ( size_t i = 0; i < numberOfBurninIterations; ++i ) {
-      RuntimeMeasurement<>::execution([&clusterer, &instances, &dist]() {
-	  return clusterer.cluster(instances, dist);
-	});
+      try {
+	RuntimeMeasurement<>::execution([&clusterer, &instances, &dist]() {
+	    return clusterer.cluster(instances, dist);
+	  });
+      }
+      catch ( flann::FLANNException& e ) {
+	std::cerr << "Burnin clusterer failed: " << e.what() << std::endl
+		  << "k " << k << std::endl
+		  << "i " << i << std::endl;
+      }
     }
+    std::cout << "Measuring " << numberOfMeasurementIterations << " runs."
+	      << std::endl;
     for ( size_t i = 0; i < numberOfMeasurementIterations; ++i ) {
-      measurements[i] +=
-	static_cast<double>(
-	  RuntimeMeasurement<>::execution([&clusterer, &instances, &dist]() {
-	      return clusterer.cluster(instances, dist);
-	    }));
+      try {
+	measurements[i] =
+	  static_cast<double>(
+			      RuntimeMeasurement<>::execution([&clusterer, &instances, &dist]() {
+				  return clusterer.cluster(instances, dist);
+				}));
+      }
+      catch ( flann::FLANNException& e ) {
+	std::cerr << "Clusterer failed: " << e.what() << std::endl
+		  << "k " << k << std::endl
+		  << "branching " << branching << std::endl
+	  	  << "iterations " << iterations << std::endl
+		  << "i " << i << std::endl;
+      }
     }
     // Do something with the measurements
     auto meanRunTime =
@@ -114,17 +152,33 @@ int main(int argc, char *argv[]) {
       std::accumulate( measurements.begin(), measurements.end(), 0.0,
 		       [meanRunTime]( double acc, double x ) {
 			 double diff = meanRunTime - x;
-			 return acc + x*x;
-		       } );
+			 return acc + diff*diff;
+		       } ) / (measurements.size() - 1);
+    
     statistics.push_back( std::make_pair( meanRunTime, stddevRunTime ) );
   }
 
-  for ( auto stat : statistics ) {
-    std::cout << stat.first << " (" << stat.second << ")" << std::endl;
+  std::ofstream out( outPath );
+  if ( out.good() ) {
+    for (size_t i = 0;
+	 i < statistics.size() && i < numberOfClusters.size();
+	 ++i ) {
+      out << "k = " << numberOfClusters[i] << ". Time = "
+	  << statistics[i].first
+	  << " (" << statistics[i].second << ")"
+	  << std::endl;
+    }
   }
-
-  delete[] instances.ptr();
-  
+  else {
+    for (size_t i = 0;
+	 i < statistics.size() && i < numberOfClusters.size();
+	 ++i ) {
+      std::cout << "k = " << numberOfClusters[i] << ". Time = "
+		<< statistics[i].first
+		<< " (" << statistics[i].second << ")"
+		<< std::endl;
+    }
+  }
   return 0;
 }
 

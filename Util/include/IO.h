@@ -6,7 +6,19 @@
 #include <iostream>
 #include <sstream>
 
+#include "String.h"
+
 typedef std::pair< std::string, std::string > StringPair;
+
+
+template<typename CharT, typename ElemT>
+ElemT
+parseElementFromString(const std::basic_string<CharT>& s) {
+  ElemT e;
+  std::basic_istringstream< CharT >(s) >> e;
+  return e;
+}
+
 
 template< typename InputIt >
 void
@@ -57,6 +69,40 @@ readTextSequence( std::istream& is,
     std::basic_istringstream< CharT >(s) >> elem;
     *out++ = elem;
   }
+}
+
+
+template< typename ElemT, typename CharT, typename OutputIt >
+std::pair<size_t, size_t>
+readTextMatrix( std::istream& is,
+		OutputIt out,
+		CharT colSep=',',
+		CharT rowSep='\n' ) {
+  size_t rows = 0;
+  size_t cols = 0;
+  std::basic_string< CharT > row;
+  ElemT elem;
+  while ( is.good() ) {
+    // Read a row and split into columns
+    std::getline( is, row, rowSep );
+    auto elements = split( row, colSep );
+    if ( elements.size() > 0 ) {
+      // We use the number of elements in the first row as the number of columns
+      // and assert that following rows have the same sumber of columns
+      if ( rows == 0 ) {
+	cols = elements.size();
+      }
+      assert( elements.size() == cols );
+      
+      // Now we iterate over the elements, convert to the proper type and store
+      // in out
+      for ( const auto& element : elements ) {
+	*out++ = parseElementFromString<CharT,ElemT>(element);
+      }
+      ++rows;
+    }
+  }
+  return std::make_pair(rows, cols);
 }
 
 

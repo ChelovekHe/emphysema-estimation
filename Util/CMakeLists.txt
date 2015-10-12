@@ -4,6 +4,7 @@ include_directories( include )
 
 set( libs
   IO
+  String
   )
 foreach( lib ${libs} )
   add_library( ${lib} STATIC ${lib}.cxx )

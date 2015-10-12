@@ -4,6 +4,19 @@
 #include "IO.h"
 #include "String.h"
 
+template<>
+float
+parseElementFromString<char, float>(const std::string& s) {
+  return std::stof(s);
+}
+
+template<>
+double
+parseElementFromString<char,double>(const std::string& s) {
+  return std::stod(s);
+}  
+
+
 std::vector< StringPair >
 readPairList( std::string inPath, char sep ) {
   std::ifstream is( inPath );
