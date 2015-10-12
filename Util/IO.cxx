@@ -21,7 +21,7 @@ readPairList( std::string inPath, char sep ) {
       throw std::invalid_argument( "Line does not contain a separator" );
     }
     pathPairs.emplace_back( std::make_pair( trim( line.substr(0, pos) ),
-					    trim( line.substr(pos + 1) ) ) );
+					    trim( line.substr(pos + 1), " \r\n\t" ) ) );
   }
       
   return pathPairs;
