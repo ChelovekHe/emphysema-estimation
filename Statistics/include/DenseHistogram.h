@@ -41,6 +41,13 @@ public:
     assert( bin < m_Counts.size() );
     ++m_Counts[bin];
   }
+
+  std::vector< value_type> getFrequencies() {
+    std::vector< value_type > frequencies( m_Counts.size() );
+    value_type sum = std::accumulate(m_Counts.begin(), m_Counts.end(), 0);
+    std::transform(m_Counts.begin(), m_Counts.end(), frequencies.begin(), [sum](value_type c){ return c/sum; });
+    return frequencies;
+  }
   
   // Binary search for the bucket
   // size_type j = 0, k = m_Edges.size();

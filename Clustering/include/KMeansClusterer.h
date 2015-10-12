@@ -24,7 +24,7 @@ public:
 		   // Flann parameters with defaults from flann
 		   int branching=32, 
 		   int iterations=11,
-		   flann_centers_init_t centers_init=FLANN_CENTERS_RANDOM,
+		   flann::flann_centers_init_t centers_init=flann::FLANN_CENTERS_RANDOM,
 		   float cb_index=0.2 )
     : m_NClusters( nClusters ),
       m_NFeatures( nFeatures ),
@@ -46,9 +46,9 @@ public:
   MatrixType
   cluster( const MatrixType& instances, Distance& dist ) {
     MatrixType centers( &m_CentersBuffer[0], m_NClusters, m_NFeatures );
-    int actualNClusters =
-      hierarchicalClustering< Distance >( instances, centers, m_Params, dist );
-    assert( actualNCLusters > 0 );
+    int nActualClusters =
+      flann::hierarchicalClustering< Distance >( instances, centers, m_Params, dist );
+    assert( nActualClusters > 0 );
 
     // If we get fewer clusters than requested we just "resize" the matrix so the
     // caller dont have to handle it.
@@ -62,7 +62,7 @@ private:
   const size_t m_NClusters;
   const size_t m_NFeatures;
   std::vector< ElementType > m_CentersBuffer;
-  KMeansIndexParams m_Params;
+  flann::KMeansIndexParams m_Params;
 };
 
 #endif

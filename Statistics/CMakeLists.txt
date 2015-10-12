@@ -1,8 +1,5 @@
 project( EE_Statistics )
 
-find_package( ITK REQUIRED )
-include( ${ITK_USE_FILE} )
-
 set( LIBS
   IO
   )

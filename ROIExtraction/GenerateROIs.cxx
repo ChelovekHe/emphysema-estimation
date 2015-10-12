@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
   // We need a number of ROIs to sample
   TCLAP::ValueArg<unsigned int> 
     nROIsArg("n", 
-	     "numROIs", 
+	     "num-rois", 
 	     "Number of ROIs to sample",
 	     false, 
 	     50, 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   // We need the size of the ROIs
   TCLAP::ValueArg<unsigned int> 
     roiSizeArg("s", 
-	       "size", 
+	       "roi-size", 
 	       "Size of the ROIs. All ROIs are cubes (s x s x s).",
 	       false, 
 	       41, 

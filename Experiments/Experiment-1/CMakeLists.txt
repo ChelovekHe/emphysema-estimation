@@ -1,10 +1,8 @@
-project( EE_FeatureExtraction )
+project( EE_Experiment-1 )
 
-set( progs
-  MaskedImageFilter
-  MaskedNormalizedConvolution
-  FiniteDifference_HessianFeatures
-  FiniteDifference_GradientFeatures)
+set( progs 
+  Scalability
+  )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
   target_link_libraries( ${prog} ${ITK_LIBRARIES} )

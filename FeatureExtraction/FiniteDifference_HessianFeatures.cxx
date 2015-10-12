@@ -24,8 +24,8 @@
 
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
+#include "itkImageRegionConstIteratorWithIndex.h"
 #include "itkDerivativeImageFilter.h"
-#include "itkMaskImageFilter.h"
 #include "itkComposeImageFilter.h"
 #include "itkFixedArray.h"
 #include "itkVectorImageToImageAdaptor.h"
@@ -108,16 +108,21 @@ int main(int argc, char *argv[]) {
   typedef itk::Image< PixelType, Dimension >  ImageType;
   typedef itk::VectorImage< PixelType, Dimension >  VectorImageType;
   typedef itk::ImageFileReader< ImageType > ReaderType;
+  
+  typedef unsigned char MaskPixelType;
+  typedef itk::Image< MaskPixelType, Dimension >  MaskType;
+  typedef itk::ImageFileReader< MaskType > MaskReaderType;
 
+  
     
   // Setup the readers
   ReaderType::Pointer imageReader = ReaderType::New();
   imageReader->SetFileName( imagePath );
 
-  ReaderType::Pointer maskReader = ReaderType::New();
+  MaskReaderType::Pointer maskReader = MaskReaderType::New();
   maskReader->SetFileName( maskPath );
-  
 
+  
   // Setup the derivative filters. We need six to get all needed derivatives
   typedef itk::DerivativeImageFilter< ImageType, ImageType >
     DerivativeFilterType;
@@ -179,9 +184,11 @@ int main(int argc, char *argv[]) {
 
   VectorImageType::Pointer hessianImage = imageToVectorFilter->GetOutput();
 
-  // We need an explicit update before we start iterating over the image
+  // We need an explicit update before we start iterating over the images and
+  // mask 
   try {
     hessianImage->Update();
+    maskReader->Update();
   }
   catch ( itk::ExceptionObject &e ) {
     std::cerr << "An error occurred: " << e << std::endl;
@@ -192,16 +199,16 @@ int main(int argc, char *argv[]) {
   // This could be moved into a separate filter, but that is TODO.
   // We just store the eigenvalues in the three first components of hessianImage
   // the LoG, Gausian curvature and Frobenius norm in the last three.
-  typedef itk::ImageRegionIterator< ImageType> IteratorType;
-  IteratorType maskIterator( maskReader->GetOutput(), 
-			     maskReader->GetOutput()->GetLargestPossibleRegion() );
-  
+  typedef itk::ImageRegionConstIterator< MaskType> MaskIteratorType;
+  MaskIteratorType maskIterator( maskReader->GetOutput(), 
+  				 maskReader->GetOutput()->GetRequestedRegion() );
+
   typedef itk::ImageRegionIterator< VectorImageType> VectorIteratorType;
   VectorIteratorType hessianIterator( hessianImage,
-				      hessianImage->GetLargestPossibleRegion() );
+				      hessianImage->GetRequestedRegion() );
   for ( hessianIterator.GoToBegin(), maskIterator.GoToBegin();
 	!(hessianIterator.IsAtEnd() || maskIterator.IsAtEnd());
-	  ++hessianIterator, ++maskIterator ) {
+	++hessianIterator, ++maskIterator ) {
     // Need a mask iterator here to skip pixels outside the mask
     if ( maskIterator.Get() == 0 ) {
       itk::VariableLengthVector<PixelType> pixel( 6 );
@@ -209,7 +216,7 @@ int main(int argc, char *argv[]) {
       hessianIterator.Set( pixel );
     }
     else {
-      itk::VariableLengthVector<PixelType> pixel = hessianIterator.Get();
+      auto pixel = hessianIterator.Get();
       itk::FixedArray<PixelType,6> hessian{ pixel.GetDataPointer() };
       itk::FixedArray<PixelType,3> eig = eigenvalues_symmetric3x3( hessian );
       pixel[0] = eig[0];
@@ -218,10 +225,8 @@ int main(int argc, char *argv[]) {
       pixel[3] = eig[0] + eig[1] + eig[2];
       pixel[4] = eig[0] * eig[1] * eig[2];
       pixel[5] = std::sqrt(eig[0]*eig[0] + eig[1]*eig[1] + eig[2]*eig[2]);
-      hessianIterator.Set( pixel );
     }
   }
-
   
   /* 
    * This does not work, because ImageFileWriter does not work with ImageAdaptor
@@ -238,7 +243,6 @@ int main(int argc, char *argv[]) {
     IndexSelectionType;
   IndexSelectionType::Pointer indexSelectionFilter = IndexSelectionType::New();
   indexSelectionFilter->SetInput( hessianImage );
-  
   
   // Setup the writer
   typedef itk::ImageFileWriter< ImageType >  WriterType;

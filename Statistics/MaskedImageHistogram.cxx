@@ -143,10 +143,13 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::string fileName = prefix + timestamp() +  OUT_FILE_TYPE;
+  // We need the histogram frequencies
+  auto frequencies = hist.getFrequencies();
+  
+  std::string fileName = prefix + "hist" + OUT_FILE_TYPE;
   std::string outPath( Path::join( outDirPath, fileName ) );
   std::ofstream out( outPath );
-  out << hist;
+  writeSequenceAsText( out, frequencies.begin(), frequencies.end() );
   if ( !out.good() ) {
     std::cerr << "Error writing histogram to file" << std::endl;
     return EXIT_FAILURE;

@@ -1,8 +1,5 @@
 project( EE_ROIExtraction )
 
-find_package( ITK REQUIRED )
-include( ${ITK_USE_FILE} )
-
 set( progs 
   GenerateROIs
   SampleROIs
