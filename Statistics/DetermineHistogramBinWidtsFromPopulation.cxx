@@ -153,8 +153,8 @@ int main(int argc, char *argv[]) {
     }
     catch ( itk::ExceptionObject &e ) {
       std::cerr << "Failed to Update readers." << std::endl
-		<< "Image: " << imageMaskPair.first << std::endl
-		<< "Mask: " << imageMaskPair.second << std::endl
+		<< "Image: '" << imageMaskPair.first << "'" << std::endl
+		<< "Mask: '" << imageMaskPair.second << "'" << std::endl
 		<< "ExceptionObject: " << e << std::endl;
       return EXIT_FAILURE;
     }
@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
 
 
   // Store the edges
-  std::string fileName = prefix + timestamp() +  OUT_FILE_TYPE;
+  std::string fileName = prefix + "bins" +  OUT_FILE_TYPE;
   std::string outPath( Path::join( outDirPath, fileName ) );
   std::ofstream out( outPath );
   writeSequenceAsText( out, edges.begin(), edges.end() );
