@@ -116,22 +116,23 @@ def main():
     # ROIs and histograms
     # A ROI is identified by the scan name and the ROI number.
     print( 'Collating histogram into feature matrix' )
-    instances = []
-    for scanName in scanNames:
-        for roi in range(numROIs):
-            instance = []
-            for featureName in featureNames:
-                for scale in scales:
-                    path = '%s_scale_%s0000_%s_ROI_%05d_hist.txt' % (scanName, scale, featureName, roi)
-                    with open(os.path.join(histogramDir, path)) as f:
-                        for row in csv.reader( f ):
-                            for elem in row:
-                                instance.append( float(elem) )
-            instances.append(instance)
-            
-    with open( instancesFile, 'w' ) as out:
-        csv.writer( out ).writerows( instances )    
-    
+    for nROIs in [50, 100, 250, 500]:
+        instances = []
+        for scanName in scanNames:
+            for roi in range(nROIs):
+                instance = []
+                for featureName in featureNames:
+                    for scale in scales:
+                        path = '%s_scale_%s0000_%s_ROI_%05d_hist.txt' % (scanName, scale, featureName, roi)
+                        with open(os.path.join(histogramDir, path)) as f:
+                            for row in csv.reader( f ):
+                                for elem in row:
+                                    instance.append( float(elem) )
+                instances.append(instance)
+        instancesFile = os.path.join( instancesDir, 'instances%d.csv' % nROIs )
+        with open( instancesFile, 'w' ) as out:
+            csv.writer( out ).writerows( instances )    
+
     return 0
 
 
