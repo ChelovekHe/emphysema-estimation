@@ -1,7 +1,5 @@
 project( EE_Test )
 
-enable_testing( )
-
 set( GTEST_LIBRARIES
   gtest
   gtest_main

@@ -10,6 +10,8 @@ set( CMAKE_PREFIX_PATH "External/ITK-build" )
 find_package( ITK REQUIRED )
 include( ${ITK_USE_FILE} )
 
+enable_testing( )
+
 include_directories( Classification/include )
 include_directories( Clustering/include )
 include_directories( External/tclap-1.2.1/include )
