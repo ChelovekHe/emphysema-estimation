@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
         
   const size_t iterations{ 11 };
   const flann::flann_centers_init_t centers_init{ flann::FLANN_CENTERS_KMEANSPP };
-  const int maxK = 32;
+  const int maxK = 64;
 
   // We have equal sized histograms
   assert( instances.cols % nHistograms == 0 );
