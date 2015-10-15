@@ -98,9 +98,13 @@ eigenvalues_symmetric3x3(itk::FixedArray<RealType, 6> const &A) {
     eigenvalues[0] = q + 2 * p * cos(phi);
     eigenvalues[2] = q + 2 * p * cos(phi + M_PI * (2.0/3.0));
     eigenvalues[1] = 3 * q - eigenvalues[0] - eigenvalues[2];   //  since trace(A) = eig1 + eig2 + eig3
-    // Ensure that have |eig3| <= |eig2| <= |eig1|
+    // Ensure that we have |eig3| <= |eig2| <= |eig1|
     if ( std::abs( eigenvalues[0] ) < std::abs( eigenvalues[2] ) ) {
       std::swap( eigenvalues[0], eigenvalues[2] );
+    }
+    // We might need to swap the last two
+    if ( std::abs( eigenvalues[1] ) < std::abs( eigenvalues[2] ) ) {
+      std::swap( eigenvalues[1], eigenvalues[2] );
     }
   }
   return eigenvalues;
