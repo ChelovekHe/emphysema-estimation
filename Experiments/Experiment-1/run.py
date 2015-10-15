@@ -9,7 +9,9 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    numHistograms = '56'
+    numFeatures = 8
+    numScales = 7
+    numHistograms = '%d' % (numFeatures*numScales)
     scalabilityProg = './Scalability'
         
     features = [

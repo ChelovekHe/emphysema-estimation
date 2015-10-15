@@ -23,7 +23,12 @@ FLANN_SRC_DIR = flann-1.8.4-src
 FLANN_ARCHIVE = ${FLANN_SRC_DIR}.zip
 FLANN_BUILD_DIR = FLANN-build
 
-all: tclap itk
+GTEST_SRC_DIR = googletest-release-1.7.0
+GTEST_ARCHIVE = ${GTEST_SRC_DIR}.tar.gz
+GTEST_BUILD_DIR = GTEST-build
+
+
+all: tclap itk flann
 
 tclap: ${TCLAP_ARCHIVE}
 	${TAR} ${TAR_EXTRACT_FLAGS} $^ 
@@ -46,6 +51,17 @@ flann: flann-src
 	cd ${FLANN_BUILD_DIR}; \
 	${CMAKE} ${CMAKE_FLAGS} ../${FLANN_SRC_DIR}
 	${MAKE} -C ${FLANN_BUILD_DIR}
+
+
+gtest-src: ${GTEST_ARCHIVE}
+	${TAR} ${TAR_EXTRACT_FLAGS} $^
+
+gtest: gtest-src
+	mkdir -p ${GTEST_BUILD_DIR}
+	cd ${GTEST_BUILD_DIR}; \
+	${CMAKE} ${CMAKE_FLAGS} ../${GTEST_SRC_DIR}
+	${MAKE} -C ${GTEST_BUILD_DIR}
+
 
 clean:
 	rm -rf ${ITK_BUILD_DIR}

@@ -23,9 +23,42 @@ eigenvalues_symmetric3x3(itk::FixedArray<RealType, 6> const &A) {
   RealType p = A12*A12 + A13*A13 + A23*A23; 
   if (p == 0) {
     // A is diagonal.
-    eigenvalues[0] = A11;
-    eigenvalues[1] = A22;
-    eigenvalues[2] = A33;
+    if ( std::abs(A11) > std::abs(A22) ) {
+      if ( std::abs(A11) > std::abs(A33) ) {
+	eigenvalues[0] = A11;
+	if ( std::abs(A22) > std::abs(A33) ) {
+	  eigenvalues[1] = A22;
+	  eigenvalues[2] = A33;
+	}
+	else {
+	  eigenvalues[1] = A33;
+	  eigenvalues[2] = A22;
+	}
+      }
+      else {
+	eigenvalues[0] = A33;
+	eigenvalues[1] = A11;
+	eigenvalues[2] = A22;
+      }
+    }
+    else {
+      if ( std::abs(A22) > std::abs(A33) ) {
+	eigenvalues[0] = A22;
+	if ( std::abs(A11) > std::abs(A33) ) {
+	  eigenvalues[1] = A11;
+	  eigenvalues[2] = A33;
+	}
+	else {
+	  eigenvalues[1] = A33;
+	  eigenvalues[2] = A11;
+	}
+      }
+      else {
+	eigenvalues[0] = A33;
+	eigenvalues[1] = A22;
+	eigenvalues[2] = A11;
+      }
+    }
   }
   else {
     RealType q = (A11 + A22 + A33) / 3;
@@ -65,9 +98,13 @@ eigenvalues_symmetric3x3(itk::FixedArray<RealType, 6> const &A) {
     eigenvalues[0] = q + 2 * p * cos(phi);
     eigenvalues[2] = q + 2 * p * cos(phi + M_PI * (2.0/3.0));
     eigenvalues[1] = 3 * q - eigenvalues[0] - eigenvalues[2];   //  since trace(A) = eig1 + eig2 + eig3
-    // Ensure that have |eig3| <= |eig2| <= |eig1|
+    // Ensure that we have |eig3| <= |eig2| <= |eig1|
     if ( std::abs( eigenvalues[0] ) < std::abs( eigenvalues[2] ) ) {
       std::swap( eigenvalues[0], eigenvalues[2] );
+    }
+    // We might need to swap the last two
+    if ( std::abs( eigenvalues[1] ) < std::abs( eigenvalues[2] ) ) {
+      std::swap( eigenvalues[1], eigenvalues[2] );
     }
   }
   return eigenvalues;
