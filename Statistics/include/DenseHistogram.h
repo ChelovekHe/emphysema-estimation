@@ -1,6 +1,7 @@
 #ifndef __DenseHistogram_h
 #define __DenseHistogram_h
 
+#include <algorithm>
 #include <iterator>
 #include <vector>
 #include <limits>
@@ -34,6 +35,8 @@ public:
     assert( m_Counts.size() > 1 );
   }
 
+  // Insert value in bin such that value is greater than the left edge and
+  // less than or equal to the right edge.
   void insert( value_type value ) {
     auto edge = std::lower_bound(m_Edges.begin(), m_Edges.end(), value );
     auto bin = std::distance( m_Edges.begin(), edge );
@@ -47,33 +50,7 @@ public:
     value_type sum = std::accumulate(m_Counts.begin(), m_Counts.end(), 0);
     std::transform(m_Counts.begin(), m_Counts.end(), frequencies.begin(), [sum](value_type c){ return c/sum; });
     return frequencies;
-  }
-  
-  // Binary search for the bucket
-  // size_type j = 0, k = m_Edges.size();
-  // size_type i = k/2;
-  // while ( j != k ) {
-  //   if ( value < m_Edges[i] ) {
-  // 	k = i;
-  // 	i = j + (k - j)/2;
-  //   }
-  //   else {
-  // 	j = i;
-  // 	i = k - (k - j)/2;
-  // 	if (i == k) break;
-  //   }
-  // }
-  // ++m_Counts[i];
-  //}
-
-// Linear search
-// void insert( value_type value ) {
-//   size_type i = 0;
-//   while ( i < m_Edges.size() && value >= m_Edges[i]  ) {
-//     ++i;
-//   }
-//   ++m_Counts.at(i);
-// }
+  }  
 
   std::vector<unsigned int> getCounts() {
     return m_Counts;
