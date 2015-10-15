@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 		   cmd);
 
   TCLAP::ValueArg<std::string> 
-    outputArg("i", 
+    outputArg("o", 
 	      "output", 
 	      "Path to output file to write results to",
 	      true,
@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
         
   const size_t iterations{ 11 };
   const flann::flann_centers_init_t centers_init{ flann::FLANN_CENTERS_KMEANSPP };
+  const int maxK = 32;
 
   // We have equal sized histograms
   assert( instances.cols % nHistograms == 0 );
@@ -108,8 +109,10 @@ int main(int argc, char *argv[]) {
   std::vector< std::pair< double, double > > statistics;
   
   for ( const auto k : numberOfClusters ) {
-    std::cout << "k = " << k << std::endl;
-    int branching = k;
+    int branching = std::min<int>(k, maxK);
+    std::cout << "k = " << k << std::endl
+	      << "branching = " << branching << std::endl;
+    
     ClustererType clusterer( k, instances.cols, branching, iterations, centers_init );
     std::cout << "Burning " << numberOfBurninIterations << " measurements."
 	      << std::endl;
@@ -158,18 +161,22 @@ int main(int argc, char *argv[]) {
     statistics.push_back( std::make_pair( meanRunTime, stddevRunTime ) );
   }
 
-  std::ofstream out( outPath );
+  std::ofstream out( outputPath );
   if ( out.good() ) {
+    // write header
+    out << "k, branching, meanTime, stddevTime" << std::endl;
     for (size_t i = 0;
 	 i < statistics.size() && i < numberOfClusters.size();
 	 ++i ) {
-      out << "k = " << numberOfClusters[i] << ". Time = "
-	  << statistics[i].first
-	  << " (" << statistics[i].second << ")"
+      out << numberOfClusters[i] << ", "
+	  << std::min<int>(numberOfClusters[i], maxK) << ", "
+	  << statistics[i].first << ", "
+	  << statistics[i].second
 	  << std::endl;
     }
   }
   else {
+    std::cerr << "Could not write to file " << outputPath << std::endl;
     for (size_t i = 0;
 	 i < statistics.size() && i < numberOfClusters.size();
 	 ++i ) {
