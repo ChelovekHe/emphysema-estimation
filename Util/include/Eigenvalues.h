@@ -23,9 +23,42 @@ eigenvalues_symmetric3x3(itk::FixedArray<RealType, 6> const &A) {
   RealType p = A12*A12 + A13*A13 + A23*A23; 
   if (p == 0) {
     // A is diagonal.
-    eigenvalues[0] = A11;
-    eigenvalues[1] = A22;
-    eigenvalues[2] = A33;
+    if ( std::abs(A11) > std::abs(A22) ) {
+      if ( std::abs(A11) > std::abs(A33) ) {
+	eigenvalues[0] = A11;
+	if ( std::abs(A22) > std::abs(A33) ) {
+	  eigenvalues[1] = A22;
+	  eigenvalues[2] = A33;
+	}
+	else {
+	  eigenvalues[1] = A33;
+	  eigenvalues[2] = A22;
+	}
+      }
+      else {
+	eigenvalues[0] = A33;
+	eigenvalues[1] = A11;
+	eigenvalues[2] = A22;
+      }
+    }
+    else {
+      if ( std::abs(A22) > std::abs(A33) ) {
+	eigenvalues[0] = A22;
+	if ( std::abs(A11) > std::abs(A33) ) {
+	  eigenvalues[1] = A11;
+	  eigenvalues[2] = A33;
+	}
+	else {
+	  eigenvalues[1] = A33;
+	  eigenvalues[2] = A11;
+	}
+      }
+      else {
+	eigenvalues[0] = A33;
+	eigenvalues[1] = A22;
+	eigenvalues[2] = A11;
+      }
+    }
   }
   else {
     RealType q = (A11 + A22 + A33) / 3;
