@@ -137,6 +137,7 @@ int main(int argc, char *argv[]) {
 			      RuntimeMeasurement<>::execution([&clusterer, &instances, &dist]() {
 				  return clusterer.cluster(instances, dist);
 				}));
+	std::cout << "Measurement " << i << " = " << measurements[i] << std::endl;
       }
       catch ( flann::FLANNException& e ) {
 	std::cerr << "Clusterer failed: " << e.what() << std::endl
