@@ -1,0 +1,2 @@
+# Directory for ROI images #
+

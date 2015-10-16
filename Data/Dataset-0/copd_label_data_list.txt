@@ -1,0 +1,22 @@
+The 20 first visit scans from copd_label_data.
+Those marked with stars are the ones used for Dataset-0
+copd_label_data/vol190_20041115.dcm
+*copd_label_data/vol486_20041206.dcm
+*copd_label_data/vol603_20041209.dcm
+copd_label_data/vol1097_20050215.dcm
+*copd_label_data/vol1390_20050405.dcm
+copd_label_data/vol1429_20050406.dcm
+*copd_label_data/vol1433_20050405.dcm
+copd_label_data/vol1952_20050602.dcm
+copd_label_data/vol2136_20050614.dcm
+*copd_label_data/vol2548_20050913.dcm
+copd_label_data/vol2560_20050830.dcm
+copd_label_data/vol2968_20050928.dcm
+copd_label_data/vol2978_20051003.dcm
+*copd_label_data/vol3206_20051018.dcm
+*copd_label_data/vol3339_20051031.dcm
+copd_label_data/vol3462_20051114.dcm
+*copd_label_data/vol3483_20051114.dcm
+*copd_label_data/vol3651_20051205.dcm
+copd_label_data/vol3774_20060112.dcm
+*copd_label_data/vol3956_20060208.dcm
