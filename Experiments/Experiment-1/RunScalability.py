@@ -3,7 +3,7 @@
 See README.md for details.
 '''
 
-import sys, subprocess
+import sys, subprocess, os.path
 
 def main(argv=None):
     if argv is None:
@@ -13,7 +13,9 @@ def main(argv=None):
     numScales = 7
     numHistograms = '%d' % (numFeatures*numScales)
     scalabilityProg = '../../Build/Experiments/Experiment-1/Scalability'
-        
+
+    outDir = 'Scalability-2'
+    
     features = [
         ('../../Data/Dataset-1/Instances/instances500.csv', 'stats500'),
         ('../../Data/Dataset-1/Instances/instances1000.csv', 'stats1000'),
@@ -26,7 +28,7 @@ def main(argv=None):
             scalabilityProg,
             '--nHistograms', numHistograms,
             '--input', feature,
-            '--output', stat
+            '--output', os.path.join(outDir, stat)
         ]
         if subprocess.call( args ) != 0:
             print('Error:', args )

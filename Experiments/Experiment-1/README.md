@@ -79,6 +79,11 @@ Dataset-1
 #### Output ####
 Graphs showing computation time as function of number of clusters and number of samples.
 
+#### Extra experiments ####
+##### Scalability 2 #####
+First run of Scalability show big improvement in running time going from 4 to 16 clusters/branching, and small improvement from 16 to 64.
+We want more datapoints to get better estimate of the curve, so we rerun with clusters = [8, 32] and otherwise use the same parameters.
+
 
 
 ### Stability of clusters ###

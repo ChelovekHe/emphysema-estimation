@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     readTextMatrix<ElementType>( is, std::back_inserter(buffer), colSep, rowSep );
   flann::Matrix< ElementType > instances(&buffer[0], dim.first, dim.second);
   
-  const std::array<size_t, 3> numberOfClusters{ 4, 16, 64 };
+  const std::array<size_t, 2> numberOfClusters{ 8, 32 };
   const size_t numberOfBurninIterations{ 10 };
   const size_t numberOfMeasurementIterations{ 100 };
         
