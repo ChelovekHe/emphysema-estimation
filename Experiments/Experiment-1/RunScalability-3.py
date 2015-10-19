@@ -12,9 +12,9 @@ def main(argv=None):
     numFeatures = 8
     numScales = 7
     numHistograms = '%d' % (numFeatures*numScales)
-    scalabilityProg = '../../Build/Experiments/Experiment-1/Scalability'
+    scalabilityProg = '../../Build/Experiments/Experiment-1/Scalability-3'
 
-    outDir = 'Scalability-2'
+    outDir = 'Scalability-3'
     
     features = [
         ('../../Data/Dataset-1/Instances/instances500.csv', 'stats500'),

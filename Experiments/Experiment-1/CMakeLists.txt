@@ -9,6 +9,8 @@ set( LIBS
 
 set( progs 
   Scalability
+  Scalability-3
+  KMeansProfiling
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
