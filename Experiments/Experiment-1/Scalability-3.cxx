@@ -81,13 +81,13 @@ int main(int argc, char *argv[]) {
     readTextMatrix<ElementType>( is, std::back_inserter(buffer), colSep, rowSep );
   flann::Matrix< ElementType > instances(&buffer[0], dim.first, dim.second);
   
-  const std::array<size_t, 2> numberOfClusters{ 8, 32 };
+  const std::array<size_t, 5> numberOfClusters{ 16, 31, 46, 61, 76 };
   const size_t numberOfBurninIterations{ 10 };
   const size_t numberOfMeasurementIterations{ 100 };
         
   const size_t iterations{ 11 };
   const flann::flann_centers_init_t centers_init{ flann::FLANN_CENTERS_KMEANSPP };
-  const int maxK = 64;
+  const int branching = 16;
 
   // We have equal sized histograms
   assert( instances.cols % nHistograms == 0 );
@@ -109,7 +109,6 @@ int main(int argc, char *argv[]) {
   std::vector< std::pair< double, double > > statistics;
   
   for ( const auto k : numberOfClusters ) {
-    int branching = std::min<int>(k, maxK);
     std::cout << "k = " << k << std::endl
 	      << "branching = " << branching << std::endl;
     
@@ -153,11 +152,11 @@ int main(int argc, char *argv[]) {
       / measurements.size();
 
     auto stddevRunTime =
-      std::accumulate( measurements.begin(), measurements.end(), 0.0,
-		       [meanRunTime]( double acc, double x ) {
-			 double diff = meanRunTime - x;
-			 return acc + diff*diff;
-		       } ) / (measurements.size() - 1);
+      std::sqrt(std::accumulate( measurements.begin(), measurements.end(), 0.0,
+				 [meanRunTime]( double acc, double x ) {
+				   double diff = meanRunTime - x;
+				   return acc + diff*diff;
+				 } ) / (measurements.size() - 1));
     
     statistics.push_back( std::make_pair( meanRunTime, stddevRunTime ) );
   }
@@ -165,12 +164,15 @@ int main(int argc, char *argv[]) {
   std::ofstream out( outputPath );
   if ( out.good() ) {
     // write header
-    out << "k, branching, meanTime, stddevTime" << std::endl;
+    out << "numSamples, numHistograms, histSize, k, branching, meanTime, stddevTime" << std::endl;
     for (size_t i = 0;
 	 i < statistics.size() && i < numberOfClusters.size();
 	 ++i ) {
-      out << numberOfClusters[i] << ", "
-	  << std::min<int>(numberOfClusters[i], maxK) << ", "
+      out << instances.rows << ", "
+	  << nHistograms << ", "
+	  << histSize << ", "
+	  << numberOfClusters[i] << ", "
+	  << branching << ", "
 	  << statistics[i].first << ", "
 	  << statistics[i].second
 	  << std::endl;
@@ -181,9 +183,13 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0;
 	 i < statistics.size() && i < numberOfClusters.size();
 	 ++i ) {
-      std::cout << "k = " << numberOfClusters[i] << ". Time = "
-		<< statistics[i].first
-		<< " (" << statistics[i].second << ")"
+      std::cout << instances.rows << ", "
+		<< nHistograms << ", "
+		<< histSize << ", "
+		<< numberOfClusters[i] << ", "
+		<< branching << ", "
+		<< statistics[i].first << ", "
+		<< statistics[i].second
 		<< std::endl;
     }
   }
