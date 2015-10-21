@@ -112,7 +112,7 @@ Dataset-2.
 
 #### Parameters ####
 * Number of clusters = [2, 4, 6, 8, 10, 16, 32, 64] and [8, 16, 32, 64]
-* Number of iterations = 1000
+* Number of iterations = 100
 * Number of samples = 500
 
 `KMeansClusterer` implementation parameters
@@ -130,6 +130,8 @@ Dataset-2.
 
 #### Output ####
 Boxplot showing the distribution of Hausdorff distances for each k.
+
+
 
 
 ### Interpretation of clusters ###
