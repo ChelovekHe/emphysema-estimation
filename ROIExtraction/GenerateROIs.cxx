@@ -31,24 +31,14 @@ int main(int argc, char *argv[]) {
   
   // We need a directory for storing the ROI info
   TCLAP::ValueArg<std::string> 
-    outDirArg("o", 
-	      "outdir", 
-	      "Path to output directory",
+    outFileArg("o", 
+	      "outfile", 
+	      "Path to output file",
 	      true, 
 	      "", 
 	      "path", 
 	      cmd);
   
-  // We can use a prefix to generate filename
-  TCLAP::ValueArg<std::string> 
-    prefixArg("p", 
-	      "prefix", 
-	      "Prefix to use for output filename",
-	      false, 
-	      "", 
-	      "string", 
-	      cmd);
-
   // We need a number of ROIs to sample
   TCLAP::ValueArg<unsigned int> 
     nROIsArg("n", 
@@ -81,8 +71,7 @@ int main(int argc, char *argv[]) {
 
   // Store the arguments
   std::string maskPath( maskArg.getValue() );
-  std::string outDirPath( outDirArg.getValue() );
-  std::string prefix( prefixArg.getValue() );
+  std::string outFilePath( outFileArg.getValue() );
   unsigned int nROIs( nROIsArg.getValue() );
   unsigned int roiSize( roiSizeArg.getValue() );
 
@@ -162,9 +151,7 @@ int main(int argc, char *argv[]) {
 
 
   // Write the ROI info
-  std::string infoFile = Path::join( outDirPath,
-				     prefix + "ROIInfo" + OUT_FILE_TYPE );
-  std::ofstream out( infoFile );
+  std::ofstream out( outFilePath );
   if ( out.good() ) {
     out << "ROI, start, size" << std::endl;
   }
