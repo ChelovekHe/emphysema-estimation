@@ -15,6 +15,7 @@ set( progs
   EigenvaluesTest
   HausdorffTest
   WeightedEarthMoversDistanceTest
+  DetermineEdgesForEqualizedHistogramTest
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
