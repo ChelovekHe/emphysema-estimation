@@ -4,15 +4,6 @@
 
    The population can be estimated by sampling or the entire population can be 
    used.
-
-   Initially we have no idea what intensity ranges to expect. So we first 
-   accumulate all the samples, keeping track of min/max. Then we map the 
-   intensity range to some fixed intensity range, e.g [0:256), and round to 
-   integers.
-
-   From this integer range, we can estimate the cdf and thus the inverse cdf, 
-   which is used for equalization.
-
 */
 #include <limits>
 #include <string>
@@ -29,6 +20,7 @@
 #include "IO.h"
 #include "DateTime.h"
 #include "Path.h"
+#include "DetermineEdgesForEqualizedHistogram.h"
 
 const std::string VERSION("0.1");
 const std::string OUT_FILE_TYPE(".txt");
@@ -134,8 +126,6 @@ int main(int argc, char *argv[]) {
 
   // Maybe reserve some memory?
   std::vector< PixelType > samples; 
-  PixelType min = std::numeric_limits< PixelType >::max();
-  PixelType max = std::numeric_limits< PixelType >::lowest();
   
   // Typedefs for the iterators
   typedef itk::ImageRegionConstIterator< MaskImageType > IteratorType;
@@ -166,16 +156,10 @@ int main(int argc, char *argv[]) {
     if ( nSamples == 0 ) {
       IteratorType
 	maskIter( maskReader->GetOutput(),
-		  maskReader->GetOutput()->GetLargestPossibleRegion() );
+		  maskReader->GetOutput()->GetRequestedRegion() );
       for ( maskIter.GoToBegin(); !maskIter.IsAtEnd(); ++maskIter ) {
 	if ( maskIter.Get() ) {
 	  auto sample = image->GetPixel( maskIter.GetIndex() );
-	  if ( sample < min ) {
-	    min = sample;
-	  }
-	  else if ( sample > max ) {
-	    max = sample;
-	  }
 	  samples.push_back( sample );
 	}
       }
@@ -183,7 +167,7 @@ int main(int argc, char *argv[]) {
     else {
       RandomIteratorType
 	maskIter( maskReader->GetOutput(),
-		  maskReader->GetOutput()->GetLargestPossibleRegion() );
+		  maskReader->GetOutput()->GetRequestedRegion() );
 	
       maskIter.SetNumberOfSamples( nSamples );
       unsigned int nSampled = 0;
@@ -191,12 +175,6 @@ int main(int argc, char *argv[]) {
 	for ( maskIter.GoToBegin(); !maskIter.IsAtEnd(); ++maskIter ) {
 	  if ( maskIter.Get() ) {
 	    auto sample = image->GetPixel( maskIter.GetIndex() );
-	    if ( sample < min ) {
-	      min = sample;
-	    }
-	    else if ( sample > max ) {
-	      max = sample;
-	    }
 	    samples.push_back( sample );
 	    if ( ++nSampled == nSamples ) {
 	      break;
@@ -207,42 +185,17 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Now we rescale from [min, max] to [0,10*nBins] and discretize to integers
-  //
-  auto width = max - min;
-  const unsigned int RANGE_MAX = std::max( 100*nBins,
-					   static_cast<unsigned int>(width) );
-  std::vector< unsigned int > histogram(RANGE_MAX + 1);
-  for ( auto sample : samples ) {
-    // This only works if we can trust that
-    //   std::ceil((max - min)/(max - min)) == 1
-    // see DivisionTest which provides evidence that we can trust it.
-    //++histogram.at( std::ceil( ((sample - min)/width) * (RANGE_MAX + 1) )  - 1 );
-    auto bin = std::round( ((sample - min)/width) * RANGE_MAX );
-    ++histogram.at( static_cast< unsigned int >( bin ) );
-  }  
-  PixelType massPerBin = samples.size() / nBins;
-  std::cout << "Max : " << max << std::endl
-	    << "Min : " << min << std::endl
-	    << "Width : " << width << std::endl
-	    << "MassPerBin : " << massPerBin << std::endl;
-  samples.clear();
 
-  std::vector< PixelType > edges(nBins-1);
-  unsigned int j = 0;
-  unsigned int mass = 0;
-  // Now we just find the integer edges and then transform back
-  // TODO : Something better 
-  for ( unsigned int i = 1; i <= edges.size(); ++i ) {
-    while ( j < histogram.size() && mass < i * massPerBin ) {
-      mass += histogram[j++];
-    }
-    edges[i-1] = min + (width * j) / static_cast<PixelType>(histogram.size());
-  }
-
+  // Now we find the equalizing edges.  
+  std::sort(samples.begin(), samples.end());
+  std::vector< PixelType > edges;
+  determineEdgesForEqualizedHistogram( samples.begin(),
+				       samples.end(),
+				       std::back_inserter(edges),
+				       nBins );
 
   // Store the edges
-  std::string fileName = prefix + "bins" +  OUT_FILE_TYPE;
+  std::string fileName = prefix + "edges" +  OUT_FILE_TYPE;
   std::string outPath( Path::join( outDirPath, fileName ) );
   std::ofstream out( outPath );
   writeSequenceAsText( out, edges.begin(), edges.end() );

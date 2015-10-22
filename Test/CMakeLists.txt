@@ -13,6 +13,7 @@ set( LIBS
 set( progs
   DenseHistogramTest
   EigenvaluesTest
+  DetermineEdgesForEqualizedHistogramTest
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
