@@ -8,12 +8,16 @@ CMAKE = ccmake
 CMAKE_FLAGS = -DCMAKE_CXX_FLAGS=-std=c++11
 
 TAR = tar
-TAR_EXTRACT_FLAGS = -xzf
+TAR_GUNZIP_FLAGS = -xzf
+TAR_BUNZIP_FLAGS = -xjf
 
 UNZIP = unzip
 
 TCLAP_SRC_DIR = tclap-1.2.1
 TCLAP_ARCHIVE = ${TCLAP_SRC_DIR}.tar.gz
+
+EIGEN_SRC_DIR = eigen-eigen-c58038c56923
+EIGEN_ARCHIVE = ${EIGEN_SRC_DIR}.tar.bz2
 
 ITK_SRC_DIR = InsightToolkit-4.8.0
 ITK_ARCHIVE = ${ITK_SRC_DIR}.tar.gz
@@ -31,11 +35,14 @@ GTEST_BUILD_DIR = GTEST-build
 all: tclap itk flann
 
 tclap: ${TCLAP_ARCHIVE}
-	${TAR} ${TAR_EXTRACT_FLAGS} $^ 
+	${TAR} ${TAR_GUNZIP_FLAGS} $^ 
+
+eigen: ${EIGEN_ARCHIVE}
+	${TAR} ${TAR_BUNZIP_FLAGS} $^
 
 
 itk-src: ${ITK_ARCHIVE}
-	${TAR} ${TAR_EXTRACT_FLAGS} $^
+	${TAR} ${TAR_GUNZIP_FLAGS} $^
 
 itk: itk-src
 	mkdir -p ${ITK_BUILD_DIR}
@@ -54,7 +61,7 @@ flann: flann-src
 
 
 gtest-src: ${GTEST_ARCHIVE}
-	${TAR} ${TAR_EXTRACT_FLAGS} $^
+	${TAR} ${TAR_GUNZIP_FLAGS} $^
 
 gtest: gtest-src
 	mkdir -p ${GTEST_BUILD_DIR}

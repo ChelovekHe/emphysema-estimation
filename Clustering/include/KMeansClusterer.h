@@ -5,12 +5,13 @@
 #include <cassert>
 
 #include "flann/flann.hpp"
+#include "Eigen/Dense"
 
 template< typename Distance >
 class KMeansClusterer {
 public:
   typedef typename Distance::ElementType ElementType;
-  typedef flann::Matrix<ElementType> MatrixType;
+  typedef Eigen::Matrix<ElementType, Eigen::Dynamic, Eigen::Dynamic> MatrixType;
   
   // The number of cluster will be at most nClusters.
   // If exactly nClusters are needed, then make sure that branching and nClusters
@@ -44,21 +45,23 @@ public:
 
 
   MatrixType
-  cluster( const MatrixType& instances, Distance& dist ) {
-    MatrixType centers( &m_CentersBuffer[0], m_NClusters, m_NFeatures );
+  cluster( MatrixType& instances, Distance& dist ) {
+    InternalMatrixType _instances( instances.data(), instances.rows(), instances.cols());
+    InternalMatrixType _centers( &m_CentersBuffer[0], m_NClusters, m_NFeatures );
     int nActualClusters =
-      flann::hierarchicalClustering< Distance >( instances, centers, m_Params, dist );
+      flann::hierarchicalClustering< Distance >( _instances, _centers, m_Params, dist );
     assert( nActualClusters > 0 );
 
-    // If we get fewer clusters than requested we just "resize" the matrix so the
-    // caller dont have to handle it.
-    if ( static_cast<size_t>(nActualClusters) < m_NClusters ) {
-      centers.rows = static_cast<size_t>( nActualClusters );
-    }
+    // Copy the centers to a new matrix
+    auto rows = nActualClusters;
+    auto cols = m_NFeatures;
+    MatrixType centers(rows, cols);
+    std::copy( _centers.ptr(), _centers.ptr() + rows*cols, centers.data() );
     return centers;
   }
     
 private:
+  typedef flann::Matrix<ElementType> InternalMatrixType;
   const size_t m_NClusters;
   const size_t m_NFeatures;
   std::vector< ElementType > m_CentersBuffer;

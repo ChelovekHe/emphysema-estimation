@@ -1,6 +1,7 @@
 *
 !Makefile
 !CMakeLists.txt
+!*.tar.bz2
 !*.tar.gz
 !*.zip
 #!InsightToolkit-4.8.0.tar.gz

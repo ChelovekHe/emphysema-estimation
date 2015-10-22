@@ -33,13 +33,15 @@ struct WeightedEarthMoversDistance {
 
     ResultType result = ResultType();
     size_t i = 0;
+    size_t j = 0;
     for ( auto weight : m_Weights ) {
-      assert( weight.first < size );
+      j += weight.first;
+      assert( j <= size );
       ResultType featureResult = ResultType();
       ResultType emd = ResultType();
-      for ( ; i < weight.first; ++i ) {
+      for ( ; i < j; ++i ) {
 	emd += *a++ - *b++;
-	featureResult += emd;
+	featureResult += std::abs(emd);
       }
       result += weight.second * featureResult;
     }

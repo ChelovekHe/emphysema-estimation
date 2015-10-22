@@ -103,16 +103,20 @@ Uses parameters
 ### Stability of clusters ###
 Estimate the stability of the clustering for varying number of clusters. The Hasudorff distance, with earth movers distance defining the metric space, is used as a measure of stability.
 
+Two experiments.
+* One with clusters = [2, 4, 6, 8, 10, 16, 32, 64] and branching = 2
+* One with clusters = [8, 16, 32, 64] and branching = 8
+
 #### Data ####
 Dataset-2.
 
 #### Parameters ####
-* Number of clusters = [2, 4, 6, 8, 10, 16, 32, 64]
-* Number of iterations = 1000
+* Number of clusters = [2, 4, 6, 8, 10, 16, 32, 64] and [8, 16, 32, 64]
+* Number of iterations = 100
 * Number of samples = 500
 
 `KMeansClusterer` implementation parameters
-* `branching` is set to the number of clusters
+* `branching` is set to [2, 8] 
 * `iterations` is set to default value (= 11)
 * `centers_init` is set to `CENTERS_KMEANSPP`
 
@@ -126,6 +130,8 @@ Dataset-2.
 
 #### Output ####
 Boxplot showing the distribution of Hausdorff distances for each k.
+
+
 
 
 ### Interpretation of clusters ###
