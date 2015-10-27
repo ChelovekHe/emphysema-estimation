@@ -8,6 +8,7 @@ set( LIBS
 
 set( progs 
   DetermineHistogramBinWidtsFromPopulation
+  DetermineHistogramBinEdges
   MaskedImageHistogram
   )
 foreach( prog ${progs} )
