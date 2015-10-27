@@ -18,6 +18,7 @@ namespace itk {
 
     RandomIteratorType iter( m_Mask, m_Mask->GetRequestedRegion() );
     iter.SetNumberOfSamples( numberOfROIs );
+    iter.ReinitializeSeed(); // Because the RandomIterator is deterministic otherwise
 
     std::vector< RegionType > rois;
     rois.reserve( numberOfROIs );
