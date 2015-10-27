@@ -55,6 +55,10 @@ public:
   std::vector<unsigned int> getCounts() {
     return m_Counts;
   }
+
+  void resetCounts() {
+    std::fill(m_Counts.begin(), m_Counts.end(), 0);
+  }
   
   // template <class CharT, class Traits>
   // std::basic_ostream<CharT, Traits>&
@@ -72,7 +76,7 @@ private:
 template<typename T>
 std::ostream&
 operator<<( std::ostream& os, const DenseHistogram< T >& hist ) {
-  writeSequenceAsText( os, hist.m_Counts.begin(), hist.m_Counts.end() );
+  return writeSequenceAsText( os, hist.m_Counts.begin(), hist.m_Counts.end() );
 }
 
 #endif

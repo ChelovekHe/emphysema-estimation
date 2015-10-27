@@ -21,7 +21,7 @@ parseElementFromString(const std::basic_string<CharT>& s) {
 
 
 template< typename InputIt >
-void
+std::ostream&
 writeSequenceAsText( std::ostream& out,
 		     InputIt begin,
 		     InputIt end,
@@ -36,6 +36,7 @@ writeSequenceAsText( std::ostream& out,
     }
     out  << *begin++;
   }
+  return out;
 }
 
 // template< typename InputIt, typename CharT >

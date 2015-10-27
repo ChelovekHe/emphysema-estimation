@@ -1,15 +1,11 @@
-project( EE_Statistics )
+project( EE_Filtering )
 
 set( LIBS
   ${ITK_LIBRARIES}
-  IO
-  String
   )
 
-set( progs 
-  DetermineHistogramBinWidtsFromPopulation
-  DetermineHistogramBinEdges
-  MaskedImageHistogram
+set( progs
+  TryingHessian3DImageFilter
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
