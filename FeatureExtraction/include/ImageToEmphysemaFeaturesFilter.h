@@ -58,6 +58,9 @@ namespace itk {
     itkGetMacro( Sigma, ScalarRealType );
     itkSetMacro( Sigma, ScalarRealType );
 
+    /** We calculate 8 different features */
+    static const size_t numFeatures = 8;
+    
     virtual void GenerateOutputInformation(void) ITK_OVERRIDE;
     
   protected:
