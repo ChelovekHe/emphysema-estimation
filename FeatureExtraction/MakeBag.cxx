@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
       std::string roiOutPath( Path::join( outDirPath, roiFileName ) );
       std::ofstream out( roiOutPath );
       for ( auto roi : rois ) {
-	out << roi << std::endl;
+	out << roi.GetIndex() << roi.GetSize() << '\n';
       }
       if ( !out.good() ) {
 	std::cerr << "Error writing ROI info file" << std::endl;
@@ -254,8 +254,7 @@ int main(int argc, char *argv[]) {
     while ( is.good() ) {
       IndexType start;
       SizeType size;
-      unsigned int nROI;
-      is >> nROI;     is.ignore( count, '[' );
+      is.ignore( count, '[' );
       is >> start[0]; is.ignore( count, ',' );
       is >> start[1]; is.ignore( count, ',' );
       is >> start[2]; is.ignore( count, '[' );
@@ -398,7 +397,15 @@ int main(int argc, char *argv[]) {
   std::string fileName = prefix + "bag" + OUT_FILE_TYPE;
   std::string outPath( Path::join( outDirPath, fileName ) );
   std::ofstream out( outPath );
-  out << bag;
+  for ( size_t i = 0; i < bag.rows(); ++i ) {
+    for ( size_t j = 0; j < bag.cols(); ++j ) {
+      out << bag(i,j);
+      if ( j + 1 < bag.cols() ) {
+	out << ",";
+      }
+    }
+    out << '\n';
+  }
   if ( !out.good() ) {
     std::cerr << "Error writing histogram to file" << std::endl;
     return EXIT_FAILURE;
