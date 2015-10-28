@@ -45,24 +45,14 @@ int main(int argc, char *argv[]) {
   
   // We need a directory for storing the resulting histogram info
   TCLAP::ValueArg<std::string> 
-    outDirArg("o", 
-	      "outdir", 
-	      "Path to output directory",
-	      true, 
-	      "", 
-	      "path", 
-	      cmd);
+    outArg("o", 
+	   "outfile", 
+	   "Path to output file",
+	   true, 
+	   "", 
+	   "path", 
+	   cmd);
   
-  // We can use a prefix to generate filenames
-  TCLAP::ValueArg<std::string> 
-    prefixArg("p", 
-	      "prefix", 
-	      "Prefix to use for output filenames",
-	      false, 
-	      "histogram_info_", 
-	      "string", 
-	      cmd);
-
   // We need to know how many bins to use
   TCLAP::ValueArg<unsigned int> 
     nBinsArg("b", 
@@ -104,8 +94,7 @@ int main(int argc, char *argv[]) {
 
   // Store the arguments
   std::string infilePath( imageArg.getValue() );
-  std::string outDirPath( outDirArg.getValue() );
-  std::string prefix( prefixArg.getValue() );
+  std::string outfilePath( outArg.getValue() );
   unsigned int nBins( nBinsArg.getValue() );
   unsigned int nSamples( nSamplesArg.getValue() );
   const std::vector< float > scales( scalesArg.getValue() );
@@ -158,9 +147,6 @@ int main(int argc, char *argv[]) {
     MaskType,
     VectorImageType > FeatureFilterType;
   const size_t numFeatures = FeatureFilterType::numFeatures;
-  FeatureFilterType::Pointer featureFilter = FeatureFilterType::New();
-  featureFilter->SetInputImage( imageReader->GetOutput() );
-  featureFilter->SetInputMask( clampFilter->GetOutput() );
 
   // Typedefs for the iterators
   typedef itk::ImageRegionConstIteratorWithIndex< MaskType >
@@ -200,6 +186,10 @@ int main(int argc, char *argv[]) {
     IteratorType
       iter( maskReader->GetOutput(),
 	    maskReader->GetOutput()->GetRequestedRegion() );
+
+    FeatureFilterType::Pointer featureFilter = FeatureFilterType::New();
+    featureFilter->SetInputImage( imageReader->GetOutput() );
+    featureFilter->SetInputMask( clampFilter->GetOutput() );
     
     for ( size_t i = 0; i < scales.size(); ++i ) {
       auto scale = scales[i];
@@ -248,9 +238,7 @@ int main(int argc, char *argv[]) {
   }    
   
   // Setup the outfile
-  std::string fileName = prefix + "edges" +  OUT_FILE_TYPE;
-  std::string outPath( Path::join( outDirPath, fileName ) );
-  std::ofstream out( outPath );
+  std::ofstream out( outfilePath );
 
   // Write a header
   out << "Features: GaussianBlur GradientMagnitude Eigenvalue1 Eigenvalue2 Eigenvalue3 LaplacianOfGaussian GaussianCurvature FrobeniusNorm\n"
@@ -260,7 +248,7 @@ int main(int argc, char *argv[]) {
   }
   if ( !out.good() ) {
     std::cerr << "Error writing edges header to file." << std::endl
-	      << "Out path: " << outPath << std::endl;
+	      << "Out path: " << outfilePath << std::endl;
     return EXIT_FAILURE;
   }  
   
@@ -276,7 +264,7 @@ int main(int argc, char *argv[]) {
     out << std::endl;
     if ( !out.good() ) {
       std::cerr << "Error writing to edges to file." << std::endl
-		<< "Out path: " << outPath << std::endl;
+		<< "Out path: " << outfilePath << std::endl;
       return EXIT_FAILURE;
     }  
   }
