@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
   // We can use a ROI file or generate one
   TCLAP::ValueArg<std::string> 
     roiArg("r", 
-	   "roifile", 
+	   "roi-file", 
 	   "Path to ROI file",
 	   false,
 	   "",
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::ValueArg<size_t> 
     numROIsArg("n", 
-	       "numrois", 
+	       "num-rois", 
 	       "Number of ROIs to sample",
 	       false,
 	       50,
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
   typedef itk::ClampImageFilter< MaskImageType,
 				 MaskImageType > ClampFilterType;
   ClampFilterType::Pointer clampFilter = ClampFilterType::New();
-  clampFilter->InPlaceOn();
+  clampFilter->InPlaceOff();
   clampFilter->SetBounds(0, 1);
   clampFilter->SetInput( maskReader->GetOutput() );
   
@@ -275,11 +275,22 @@ int main(int argc, char *argv[]) {
   
   // Read the histogram edge spec
   std::ifstream isHist( histPath );
+  if ( !isHist.good() ) {
+    std::cerr << "Could not read histogram file '" << histPath << "'" << std::endl;
+    return EXIT_FAILURE;
+  }
+  
   while ( isHist.good() ) {
     std::string line;
     std::getline( isHist, line );
     if ( line.empty() ) {
+      std::cout << "Empty line. Breaking" << std::endl;
       break;
+    }
+    if ( line[0] == '#' ) {
+      // Skip it
+      std::cout << "Skipping a line" << std::endl;
+      continue;
     }
     std::stringstream ss( line );
     std::vector< PixelType > edges;
@@ -301,6 +312,9 @@ int main(int argc, char *argv[]) {
 
   if ( histograms.size() != numFeatures * scales.size() ) {
     std::cerr << "Number of histograms must match number of features times number of scales"
+	      << std::endl
+	      << "Number of histograms = " << histograms.size() << std::endl
+	      << "Number of features*scales = " << numFeatures*scales.size()
 	      << std::endl;
     return EXIT_FAILURE;
   }
@@ -320,7 +334,7 @@ int main(int argc, char *argv[]) {
     MaskImageType > MaskROIFilterType;
   MaskROIFilterType::Pointer maskROIFilter = MaskROIFilterType::New();
   maskROIFilter->SetInput( clampFilter->GetOutput() );
-
+  
   // We need to iterate over the mask to get the pixels to sample
   typedef itk::ImageRegionConstIteratorWithIndex< MaskImageType >
     MaskIteratorType;
@@ -339,21 +353,39 @@ int main(int argc, char *argv[]) {
   for ( size_t i = 0; i < scales.size(); ++i ) {
     std::cout << "Processing scale " << scales[i] << std::endl;
     featureFilter->SetSigma(scales[i]);
-
+    try {
+      // We need to update the largest possible region to make it work
+      // TODO: figure what happens to the regions when looping, because it is
+      // not clear.
+      featureFilter->UpdateLargestPossibleRegion();
+    }
+    catch ( itk::ExceptionObject &e ) {
+      std::cerr << "Failed to update featureFilter." << std::endl       
+		<< "Scale: " << scales[i] << std::endl
+		<< "RequestedRegion: " << featureFilter->GetOutput()->GetRequestedRegion() << std::endl
+		<< "LargestPossibleRegion: " << featureFilter->GetOutput()->GetLargestPossibleRegion() << std::endl
+		<< "Clamp: LargestPossibleRegion(): " << clampFilter->GetOutput()->GetLargestPossibleRegion() << std::endl
+		<< "ExceptionObject: " << e << std::endl;
+      return EXIT_FAILURE;
+    }
+    
     // We process one ROI at a time
     for ( size_t j = 0; j < rois.size(); ++j ) {
       roiFilter->SetRegionOfInterest( rois[j] );
       maskROIFilter->SetRegionOfInterest( rois[j] );
       try {
 	roiFilter->Update();
-	maskROIFilter->Update();
+  	maskROIFilter->Update();
       }
       catch ( itk::ExceptionObject &e ) {
-	std::cerr << "Failed to process." << std::endl       
+	std::cerr << "Failed to update maskROIFilter." << std::endl       
 		  << "ROI: " << rois[j] << std::endl
+		  << "Feature filter region: " << featureFilter->GetOutput()->GetLargestPossibleRegion() << std::endl
+		  << "Clamp filter region: " << clampFilter->GetOutput()->GetLargestPossibleRegion() << std::endl
 		  << "ExceptionObject: " << e << std::endl;
 	return EXIT_FAILURE;
       }
+      
       // Setup the mask iterator
       MaskIteratorType
 	maskIter( maskROIFilter->GetOutput(),
@@ -371,12 +403,6 @@ int main(int argc, char *argv[]) {
 	  }
 	}
       }
-
-      std::cout << "Bag " << j << ": ";
-      for ( auto& hist : histograms ) {
-	std::cout << hist << " | ";
-      }
-      std::cout << std::endl;
       
       // Now we add the histograms to the bag at row j.
       // We need to use the column range
