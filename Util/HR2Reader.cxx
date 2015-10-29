@@ -1,7 +1,12 @@
-#include <exception>
+#include <utility>
+#include <vector>
+#include <string>
+#include <iterator>
+#include <stdexcept>
 #include <fstream>
 
 #include "HR2Reader.h"
+#include "InflateStream.h"
 /*
   Reverse of HR2 format
   Numeric values in fields are stored as ascii separated by space \x20
@@ -30,104 +35,138 @@
 
  */
 
+std::pair< HR2Header, std::vector<float> >
+readHR2( std::string path ) {
+  std::ifstream is( path );
+  if ( ! is.good() ) {
+    throw std::runtime_error("Could not read file");
+  }
+
+  if ( !isHR2Format( is ) ) {
+    throw std::invalid_argument("Not an HR2 file");
+  }
   
-void readHR2(std::string path) {
-  std::ifstream in(path);
-  if ( in.good() ) {
-    char buf[3];
-    // Read the header
-    // Must start with the string "HR2"
-    in.read(buf, 3);
-    if (buf[0] != 'H' || buf[1] != 'R' || buf[2] != '2') {
-      throw std::invalid_argument("Not an HR2 file");
-    }
+  // Read and check the header
+  HR2Header header = readHR2Header( is );
+  checkHeader( header );
 
-    // No we read the header contents
-    HR2Header header;
-    while ( in.good() ) {
-      HR2Tag tag = getTag(in);
-      unsigned int len = getFieldLength(in);
+  // Now we can try to read the data
+  std::vector< unsigned char > inflated;
+  if ( inflateStream( is, std::back_inserter(inflated) ) != Z_OK ) {
+    throw std::runtime_error( "Error inflating" );
+  }
 
-      if ( tag == HR2Tag::PixelData ) {
-	// If we have found the PixelData we are done reading the header
-	header.pixelDataLength = len;
-	break
-      }
-      
-      std::string s(len, 0);
-      in.read(len, s.data());
-      switch ( tag ) {
-      case HR2Tag::PixelType:
-	// Read a string naming the datatype
-	header.pixelType = stoHR2PT(s);
-	break;
-	
-      case HR2Tag::Dimension:
-	// Read a single unsigned integer stored as ascii
-	header.dimension = std::stoul(s);
-	break;
+  // Convert to float
+  std::vector< float > buffer( inflated.size() / sizeof(float) );
+  std::copy( inflated.begin(),
+	     inflated.end(),
+	     reinterpret_cast<unsigned char*>(&buffer[0]) );
+  
+  return std::make_pair(header, buffer);
+}
 
-      case HR2Tag::Size:
-	// Read a series of unsigned integers separated by <space>
-	size_t pos;
-	while (s.size() > 0) {
-	  header.size.push_back( std::stoul(s, &pos) );
-	  s = s.substr(pos);
-	}
-	break;
-	
-      case HR2Tag::Origin:
-	// Read a series of unsigned integers separated by <space>
-	size_t pos;
-	while (s.size() > 0) {
-	  header.origin.push_back( std::stoul(s, &pos) );
-	  s = s.substr(pos);
-	}
-	break;
+bool isHR2Format( std::istream& is ) {
+  // Must start with the string "HR2"
+  char buf[3];
+  is.read(buf, 3);
+  return buf[0] == 'H' && buf[1] == 'R' && buf[2] != '3';
+}
 
-      case HR2Tag::Spacing:
-	// Read a series of unsigned integers separated by <space>
-	size_t pos;
-	while (s.size() > 0) {
-	  header.spacing.push_back( std::stoul(s, &pos) );
-	  s = s.substr(pos);
-	}
-	break;
+HR2Header readHR2Header( std::istream& is ) {  
+  HR2Header header;
+  while ( is.good() ) {
+    HR2Tag tag = getTag(is);
+    unsigned int len = getFieldLength(is);
 
-      case HR2Tag::Compression:
-	// Read a string naming the compression method
-	header.pixelType = stoHR2C(s);
-	break;
-
-      default:
-	throw std::invalid_argument("Not an HR2 tag");
-      }
-    }
-
-    // Now we can try to read the data
-    if ( header.pixelType != HR2PixelType::Float ) {
-      throw std::runtime_error("Only PixelType float implemented");
-    }
-
-    if ( header.compression != HR2Compression::Zlib ) {
-      throw std::runtime_error("Only Zlib compression implemented");
-    }
-
-    if ( header.size.size() != dimension ) {
-      
+    if ( tag == HR2Tag::ImageData ) {
+      // If we have found the ImageData we are done reading the header
+      header.pixelDataLength = len;
       break;
-    default:
-      throw std::invalid_argument("Unknown pixel type");
     }
-      
-    
+
+    size_t pos;
+    std::string s(len, 0);
+    is.read(&s[0], len );
+    switch ( tag ) {
+    case HR2Tag::PixelType:
+      // Read a string naming the datatype
+      header.pixelType = stoHR2PT(s);
+      break;
+	
+    case HR2Tag::Dimension:
+      // Read a single unsigned integer stored as ascii
+      header.dimension = std::stoul(s);
+      break;
+
+    case HR2Tag::Size:
+      // Read a series of unsigned integers separated by <space>
+      while (s.size() > 0) {
+	header.size.push_back( std::stoul(s, &pos) );
+	s = s.substr(pos);
+      }
+      break;
+	
+    case HR2Tag::Origin:
+      // Read a series of unsigned integers separated by <space>
+      while (s.size() > 0) {
+	header.origin.push_back( std::stod(s, &pos) );
+	s = s.substr(pos);
+      }
+      break;
+
+    case HR2Tag::Spacing:
+      // Read a series of unsigned integers separated by <space>
+      while (s.size() > 0) {
+	header.spacing.push_back( std::stod(s, &pos) );
+	s = s.substr(pos);
+      }
+      break;
+
+    case HR2Tag::Compression:
+      // Read a string naming the compression method
+      header.compression = stoHR2C(s);
+      break;
+
+    default:
+      throw std::invalid_argument("Not an HR2 tag");
+    }
+  }
+
+  if ( ! is.good() ) {
+    throw std::runtime_error("Error reading from stream");
+  }
+  
+  return header;
+}
+
+// Check that header tags are consistent and supported
+void checkHeader( HR2Header header ) {
+  if ( header.pixelType != HR2PixelType::Float ) {
+    throw std::runtime_error("Only PixelType float implemented");
+  }
+
+  if ( header.compression != HR2Compression::ZLib ) {
+    throw std::runtime_error("Only ZLib compression implemented");
+  }
+
+  if ( header.size.size() != header.dimension ) {
+    throw std::runtime_error("Number of size elements does not match dimension");
+  }
+
+  if ( header.origin.size() != header.dimension ) {
+    throw std::runtime_error("Number of origin elements does not match dimension");
+  }
+
+  if ( header.spacing.size() != header.dimension ) {
+    throw std::runtime_error("Number of spacing elements does not match dimension");
   }
 }
 
+
 HR2Tag getTag(std::istream& is) {
   unsigned int len = is.get();
-  std::string s(len, '\0');
-  is.read(s.data(), len);
+  std::string s(len, 0);
+  is.read(&s[0], len);
   if (s == "PixelType")   return HR2Tag::PixelType;
   if (s == "Compression") return HR2Tag::Compression;
   if (s == "Dimension")   return HR2Tag::Dimension;
@@ -145,10 +184,10 @@ unsigned int getFieldLength(std::istream& is) {
   while( byte = is.get() ) {
     bytes.push_back(byte);
   }
-  if ( bytes.length > 4 ) {
+  if ( bytes.size() > 4 ) {
     throw std::out_of_range("Max allowed num bytes is 4");
   }
-  while ( bytes.length < 4 ) {
+  while ( bytes.size() < 4 ) {
     bytes.push_back(0);
   }
   return (bytes[3]<<24) | (bytes[2]<<16) | (bytes[1]<<8) | bytes[0];
@@ -158,12 +197,13 @@ HR2PixelType stoHR2PT(std::string s) {
   if (s == "float") {
     return HR2PixelType::Float;
   }
-  throw std::invalid_argument("Unknown PixelType");
+  throw std::invalid_argument("Unknown PixelType: '" + s + "'");
 }   
 
 HR2Compression stoHR2C(std::string s) {
-  if (s == "Zlib") {
-    return HR2Compression::Zlib;
+  if (s == "ZLib") {
+    return HR2Compression::ZLib;
   }
-  throw std::invalid_argument("Unknown Compression");
+  throw std::invalid_argument("Unknown Compression: '" + s + "'");
 }
+
