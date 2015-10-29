@@ -16,15 +16,15 @@ namespace itk {
   generate( size_t numberOfROIs, typename TMask::SizeType size ) {
     m_Mask->Update(); // Might throw
 
-    RandomIteratorType iter( m_Mask, m_Mask->GetRequestedRegion() );
+    // We need the image region so we can test that all ROIs are inside the image
+    RegionType imageRegion = m_Mask->GetLargestPossibleRegion();
+    
+    RandomIteratorType iter( m_Mask, imageRegion );
     iter.SetNumberOfSamples( numberOfROIs );
     iter.ReinitializeSeed(); // Because the RandomIterator is deterministic otherwise
 
     std::vector< RegionType > rois;
     rois.reserve( numberOfROIs );
-
-    // We need the image size so we can test that all ROIs are inside the image
-    RegionType imageRegion = m_Mask->GetRequestedRegion();
 
     // Run the ROI sampling loop  
     for ( size_t nROI = 0; nROI < numberOfROIs;  ) {
