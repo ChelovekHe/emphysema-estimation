@@ -4,6 +4,7 @@
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkVectorIndexSelectionCastImageFilter.h"
+#include "itkClampImageFilter.h"
 
 #include "ImageToEmphysemaFeaturesFilter.h"
 #include "Path.h"
@@ -11,12 +12,18 @@
 const std::string OUT_FILE_TYPE(".nii.gz");
 
 int main( int argc, char* argv[] ) {
-  if( argc < 4 ) {
+  if( argc < 5 ) {
     std::cerr << "Usage: " << std::endl;
-    std::cerr << argv[0] << "  inputImageFile  inpuMaskFile  outputImageFile" << std::endl;
+    std::cerr << argv[0] << "  inputImageFile  inputMaskFile  scale  outBaseName" << std::endl;
     return EXIT_FAILURE;
     }
 
+  const std::string imageFile(argv[1]);
+  const std::string maskFile(argv[2]);
+  const float scale = std::atof(argv[3]);
+  const std::string outBaseName(argv[4]);
+  
+  
   typedef float PixelType;
   typedef unsigned char MaskPixelType;
   const unsigned int Dimension = 3;
@@ -28,12 +35,21 @@ int main( int argc, char* argv[] ) {
   // Setup the reader
   typedef itk::ImageFileReader< ImageType > ReaderType;
   ReaderType::Pointer reader = ReaderType::New();
-  reader->SetFileName( argv[1] );
+  reader->SetFileName( imageFile );
 
   typedef itk::ImageFileReader< MaskType > MaskReaderType;
   MaskReaderType::Pointer maskReader = MaskReaderType::New();
-  maskReader->SetFileName( argv[2] );
+  maskReader->SetFileName( maskFile );
 
+  // Setup the clamp filter
+  typedef itk::ClampImageFilter< MaskType,
+				 MaskType > ClampFilterType;
+  ClampFilterType::Pointer clampFilter = ClampFilterType::New();
+  clampFilter->InPlaceOn();
+  clampFilter->SetBounds(0, 1);
+  clampFilter->SetInput( maskReader->GetOutput() );
+
+  
   // Setup the feature filter
   typedef itk::ImageToEmphysemaFeaturesFilter<
     ImageType,
@@ -41,8 +57,8 @@ int main( int argc, char* argv[] ) {
     VectorImageType > FeatureFilterType;
   FeatureFilterType::Pointer featureFilter = FeatureFilterType::New();
   featureFilter->SetInputImage( reader->GetOutput() );
-  featureFilter->SetInputMask( maskReader->GetOutput() );
-
+  featureFilter->SetInputMask( clampFilter->GetOutput() );
+  featureFilter->SetScale( scale );
   
   typedef itk::VectorIndexSelectionCastImageFilter<VectorImageType, ImageType>
     IndexSelectionType;
@@ -55,14 +71,14 @@ int main( int argc, char* argv[] ) {
   writer->SetInput( indexSelectionFilter->GetOutput() );
 
   std::vector< std::string > featureNames{
-    "intensity", "GradientMagnitude",
-      "eig1", "eig2", "eig3",
-      "LoG", "Curvature", "Frobenius"
+    "GaussianBlur", "GradientMagnitude",
+      "Eigenvalue1", "Eigenvalue2", "Eigenvalue3",
+      "LaplacianOfGaussian", "GaussianCurvature", "FrobeniusNorm"
       };
   
   for (unsigned int i = 0; i < featureNames.size(); ++i ) {
     indexSelectionFilter->SetIndex( i );
-    std::string outFile = Path::join( argv[3], featureNames[i] + OUT_FILE_TYPE );
+    std::string outFile = Path::join( outBaseName, featureNames[i] + OUT_FILE_TYPE );
     writer->SetFileName( outFile );
     try {
       writer->Update();
