@@ -241,8 +241,8 @@ int main(int argc, char *argv[]) {
   std::ofstream out( outfilePath );
 
   // Write a header
-  out << "Features: GaussianBlur GradientMagnitude Eigenvalue1 Eigenvalue2 Eigenvalue3 LaplacianOfGaussian GaussianCurvature FrobeniusNorm\n"
-      << "Scales: ";
+  out << "# Features: GaussianBlur GradientMagnitude Eigenvalue1 Eigenvalue2 Eigenvalue3 LaplacianOfGaussian GaussianCurvature FrobeniusNorm\n"
+      << "# Scales: ";
   for ( size_t i = 0; i < scales.size(); ++i ) {
     out << scales[i] << (i+1 < scales.size() ? ' ' : '\n');
   }
