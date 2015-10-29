@@ -5,7 +5,7 @@ set( progs
   MaskedNormalizedConvolution
   FiniteDifference_HessianFeatures
   FiniteDifference_GradientFeatures
-  TryingImageToEmphysemaFeaturesFilter
+  ExtractFeatures
   MakeBag
   )
 foreach( prog ${progs} )
