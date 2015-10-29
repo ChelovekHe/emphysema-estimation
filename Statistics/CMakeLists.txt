@@ -10,6 +10,7 @@ set( progs
   DetermineHistogramBinWidtsFromPopulation
   DetermineHistogramBinEdges
   MaskedImageHistogram
+  ComputeJointHistogram
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
