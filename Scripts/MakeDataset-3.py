@@ -34,12 +34,8 @@ def main():
         'roi-size-z' : 41,
     }
     
-    # # Determine the bin edges
+    # Determine the bin edges
     print( 'Estimating bin edges for equalized histograms' )
-    numBins = 41
-    numSamples = 10000
-    scales = ("%0.2f" % (0.6 * math.sqrt(2.0)**i) for i in range(7))
-    
     args = [
         progs['HistBinEdges'],
         '--infile', files['ScanMaskList'],
