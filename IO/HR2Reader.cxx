@@ -4,6 +4,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <fstream>
+#include <iostream>
 
 #include "HR2Reader.h"
 #include "InflateStream.h"
@@ -34,6 +35,19 @@
   ImageData<length-of-image-data>\x00<image-data>
 
  */
+std::ostream& operator<<(std::ostream& os, const HR2Tag& tag) {
+  switch(tag) {
+  case HR2Tag::PixelType: os << "PixelType"; break;
+  case HR2Tag::Compression: os << "Compression"; break;
+  case HR2Tag::Dimension: os << "Dimension"; break;
+  case HR2Tag::Size: os << "Size"; break;
+  case HR2Tag::Origin: os << "Origin"; break;
+  case HR2Tag::Spacing: os << "Spacing"; break;
+  case HR2Tag::ImageData: os << "ImageData"; break;
+  default: os << "UnknownTag";
+  }
+  return os;
+}
 
 std::pair< HR2Header, std::vector<float> >
 readHR2( std::string path ) {
@@ -183,9 +197,7 @@ unsigned int getFieldLength(std::istream& is) {
   std::vector<unsigned int> bytes;
   while( byte = is.get() ) {
     bytes.push_back(byte);
-  }
-  if ( bytes.size() > 4 ) {
-    throw std::out_of_range("Max allowed num bytes is 4");
+    if ( bytes.size() == 4 ) { break; }
   }
   while ( bytes.size() < 4 ) {
     bytes.push_back(0);

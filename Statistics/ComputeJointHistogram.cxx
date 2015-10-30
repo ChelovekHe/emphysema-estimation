@@ -113,6 +113,19 @@ int main(int argc, char *argv[]) {
   ReaderType::Pointer reader2 = ReaderType::New();
   reader2->SetFileName( image2Path );
 
+  // Hack to get join filter to accept different origin/spacing setting
+  try {
+    reader1->Update();
+    reader2->Update();
+  }
+  catch ( itk::ExceptionObject &e ) {
+    std::cerr << "Error updating readers." << std::endl
+	      << "ExceptionObject: " << e << std::endl;
+    return EXIT_FAILURE;
+  }
+  reader2->GetOutput()->SetOrigin( reader1->GetOutput()->GetOrigin() );
+  reader2->GetOutput()->SetSpacing( reader1->GetOutput()->GetSpacing() );
+
   
   // Setup the join filter
   typedef itk::JoinImageFilter< ImageType, ImageType > JoinFilterType;

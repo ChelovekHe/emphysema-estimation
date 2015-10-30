@@ -58,7 +58,7 @@ int main( int argc, char* argv[] ) {
   FeatureFilterType::Pointer featureFilter = FeatureFilterType::New();
   featureFilter->SetInputImage( reader->GetOutput() );
   featureFilter->SetInputMask( clampFilter->GetOutput() );
-  featureFilter->SetScale( scale );
+  featureFilter->SetSigma( scale );
   
   typedef itk::VectorIndexSelectionCastImageFilter<VectorImageType, ImageType>
     IndexSelectionType;
@@ -78,7 +78,7 @@ int main( int argc, char* argv[] ) {
   
   for (unsigned int i = 0; i < featureNames.size(); ++i ) {
     indexSelectionFilter->SetIndex( i );
-    std::string outFile = Path::join( outBaseName, featureNames[i] + OUT_FILE_TYPE );
+    std::string outFile = outBaseName + featureNames[i] + OUT_FILE_TYPE;
     writer->SetFileName( outFile );
     try {
       writer->Update();
