@@ -1,3 +1,17 @@
+#!/usr/bin/Rscript
+
+# Plot a joint histogram and save it as a postscript file
+
+main <- function(options) {
+    if ( length(options) < 2 ) {
+        print( "Usage: <histogram-path> <output-path>" );
+        quit( status = 1 );
+    }
+    PlotJointHistogram( options[1], options[2] );
+    quit( status = 0 );
+}
+
+
 
 PlotJointHistogram <- function(inpath,outpath) {
     data <- read.table(inpath, header=F);
@@ -9,6 +23,7 @@ PlotJointHistogram <- function(inpath,outpath) {
     myImagePlot(imdata, xLabels=labels.x, yLabels=labels.y);
     dev.off();
 }
+
 
 # src: http://www.phaget4.org/R/image_matrix.html
 # ----- Define a function for plotting a matrix ----- #
@@ -78,3 +93,7 @@ axis(BELOW<-1, at=1:length(xLabels), labels=xLabels, cex.axis=0.7)
  layout(1)
 }
 # ----- END plot function ----- #
+
+
+options <- commandArgs(trailingOnly=TRUE);
+main(options);
