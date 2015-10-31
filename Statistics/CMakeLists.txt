@@ -8,7 +8,10 @@ set( LIBS
 
 set( progs 
   DetermineHistogramBinWidtsFromPopulation
+  DetermineHistogramBinEdges
   MaskedImageHistogram
+  ComputeJointHistogram
+  CheckEigenvalues
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )

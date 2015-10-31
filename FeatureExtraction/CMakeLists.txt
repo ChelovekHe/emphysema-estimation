@@ -4,7 +4,10 @@ set( progs
   MaskedImageFilter
   MaskedNormalizedConvolution
   FiniteDifference_HessianFeatures
-  FiniteDifference_GradientFeatures)
+  FiniteDifference_GradientFeatures
+  ExtractFeatures
+  MakeBag
+  )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
   target_link_libraries( ${prog} ${ITK_LIBRARIES} )

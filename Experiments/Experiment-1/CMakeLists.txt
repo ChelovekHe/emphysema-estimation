@@ -11,6 +11,8 @@ set( progs
   Scalability
   Scalability-3
   KMeansProfiling
+  Stability
+  RandomCentersDistance
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )

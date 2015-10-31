@@ -29,10 +29,11 @@
 
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
-#include "itkSmoothingRecursiveGaussianImageFilter.h"
+//#include "itkSmoothingRecursiveGaussianImageFilter.h"
+#include "NormalizedGaussianConvolutionImageFilter.h"
 #include "itkMaskImageFilter.h"
-#include "itkMultiplyImageFilter.h"
-#include "itkDivideImageFilter.h"
+//#include "itkMultiplyImageFilter.h"
+//#include "itkDivideImageFilter.h"
 
 #include "Path.h"
 
@@ -139,55 +140,42 @@ int main(int argc, char *argv[]) {
 
   ReaderType::Pointer certaintyReader = ReaderType::New();
   certaintyReader->SetFileName( certaintyPath );
-
-
-  // Setup the Multiply filter
-  typedef itk::MultiplyImageFilter< ImageType > MultiplyFilterType;
-  MultiplyFilterType::Pointer multiplyFilter = MultiplyFilterType::New();
-  multiplyFilter->SetInput1( imageReader->GetOutput() );
-  multiplyFilter->SetInput2( certaintyReader->GetOutput() );
   
-
-  // Setup the Gauss filters, one for each of the convolutions.
-  typedef itk::SmoothingRecursiveGaussianImageFilter< ImageType >
-    GaussFilterType;
-
-  // The filter that works on the product of certainty and image
-  GaussFilterType::Pointer certaintyImageFilter = GaussFilterType::New();
-  certaintyImageFilter->SetInput( multiplyFilter->GetOutput() );
-
-  // The filter that works on the certainty
-  GaussFilterType::Pointer certaintyFilter = GaussFilterType::New();
-  certaintyFilter->SetInput( certaintyReader->GetOutput() );
-
-  // If we are doing more than one scale we cannot do it inplace.
-  certaintyImageFilter->SetInPlace( scales.size() == 1 );
-  certaintyFilter->SetInPlace( scales.size() == 1 );
-  
-
-  // Setup the division filter that does {a * cT}/{a * c}
-  typedef itk::DivideImageFilter< ImageType, ImageType, ImageType >
-    DivideFilterType;
-  DivideFilterType::Pointer divideFilter = DivideFilterType::New();
-  divideFilter->SetInput1( certaintyImageFilter->GetOutput() );
-  divideFilter->SetInput2( certaintyFilter->GetOutput() );
+  // Setup the NormalizedConvolutionFilter
+  typedef itk::NormalizedGaussianConvolutionImageFilter< ImageType > FilterType;
+  FilterType::Pointer normConvFilter = FilterType::New();
+  normConvFilter->SetInputImage( imageReader->GetOutput() );
+  normConvFilter->SetInputCertainty( certaintyReader->GetOutput() );
   
   // Setup the writer
   typedef itk::ImageFileWriter< ImageType >  WriterType;
   WriterType::Pointer writer =  WriterType::New();
 
   // If we should mask the output we pass the divide filter through a mask filter
+  // Setup the mask filter that applies the certainty as a mask
+  typedef itk::MaskImageFilter< ImageType, ImageType, ImageType >
+    MaskFilterType;
+  MaskFilterType::Pointer maskFilter = MaskFilterType::New();
   if ( maskOutput ) {
-    // Setup the mask filter that applies the certainty as a mask
-    typedef itk::MaskImageFilter< ImageType, ImageType, ImageType >
-      MaskFilterType;
-    MaskFilterType::Pointer maskFilter = MaskFilterType::New();
-    maskFilter->SetInput1( divideFilter->GetOutput() );
+    maskFilter->SetInput1( normConvFilter->GetOutput() );
     maskFilter->SetInput2( certaintyReader->GetOutput() );
     writer->SetInput( maskFilter->GetOutput() );
+    // There is a strange issue. If the norm conv output is masked before writing,
+    // then we have to do an explicit update before updating the writer. But if 
+    // the output is not masked we dont have to do an explicit update.
+    // try {
+    //   maskFilter->Update();
+    // }
+    // catch ( itk::ExceptionObject &e ) {
+    //   std::cerr << "Failed to process." << std::endl
+    // 		<< "Image: " << imagePath << std::endl
+    // 		<< "Certainty: " << certaintyPath << std::endl
+    // 		<< "ExceptionObject: " << e << std::endl;
+    //   return EXIT_FAILURE;
+    // }
   }
   else {
-    writer->SetInput( divideFilter->GetOutput() );
+    writer->SetInput( normConvFilter->GetOutput() );
   }
 
   // Base file name for output images
@@ -195,9 +183,9 @@ int main(int argc, char *argv[]) {
   
   // Do the convolution for each scale
   for (auto scale : scales ) {
-    certaintyImageFilter->SetSigma( scale );
-    certaintyFilter->SetSigma( scale );
-
+    std::cout << "Processing scale " << scale << std::endl;
+    normConvFilter->SetSigma(scale);
+    
     // Create a filename
     std::string outFile = baseFileName + "scale_" + std::to_string( scale ) +
       OUT_FILE_TYPE;

@@ -5,8 +5,8 @@
 #include <array>
 #include <fstream>
 
-#include "flann/io/hdf5.h"
-#include "flann/flann.hpp"
+#include "Eigen/Dense"
+
 #include "tclap/CmdLine.h"
 
 #include "WeightedEarthMoversDistance.h"
@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
   typedef float ElementType;
   typedef WeightedEarthMoversDistance< ElementType > DistanceType;
   typedef KMeansClusterer< DistanceType > ClustererType;
+  typedef typename ClustererType::MatrixType MatrixType;
   
   // Parse the data into a matrix
   std::ifstream is( inputPath );
@@ -79,7 +80,8 @@ int main(int argc, char *argv[]) {
   char colSep = ',', rowSep = '\n';
   auto dim =
     readTextMatrix<ElementType>( is, std::back_inserter(buffer), colSep, rowSep );
-  flann::Matrix< ElementType > instances(&buffer[0], dim.first, dim.second);
+  MatrixType instances(dim.first, dim.second);
+  std::copy(buffer.cbegin(), buffer.cend(), instances.data());
   
   const std::array<size_t, 5> numberOfClusters{ 16, 31, 46, 61, 76 };
   const size_t numberOfBurninIterations{ 10 };
@@ -90,11 +92,11 @@ int main(int argc, char *argv[]) {
   const int branching = 16;
 
   // We have equal sized histograms
-  assert( instances.cols % nHistograms == 0 );
-  const size_t histSize{ instances.cols/nHistograms };
+  assert( instances.cols() % nHistograms == 0 );
+  const size_t histSize{ instances.cols()/nHistograms };
 
-  std::cout << "nRows " << instances.rows << std::endl
-	    << "nCols " << instances.cols << std::endl
+  std::cout << "nRows " << instances.rows() << std::endl
+	    << "nCols " << instances.cols() << std::endl
 	    << "nHistograms " << nHistograms << std::endl
 	    << "histSize " << histSize << std::endl;
   
@@ -112,7 +114,7 @@ int main(int argc, char *argv[]) {
     std::cout << "k = " << k << std::endl
 	      << "branching = " << branching << std::endl;
     
-    ClustererType clusterer( k, instances.cols, branching, iterations, centers_init );
+    ClustererType clusterer( k, instances.cols(), branching, iterations, centers_init );
     std::cout << "Burning " << numberOfBurninIterations << " measurements."
 	      << std::endl;
     for ( size_t i = 0; i < numberOfBurninIterations; ++i ) {
@@ -168,7 +170,7 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0;
 	 i < statistics.size() && i < numberOfClusters.size();
 	 ++i ) {
-      out << instances.rows << ", "
+      out << instances.rows() << ", "
 	  << nHistograms << ", "
 	  << histSize << ", "
 	  << numberOfClusters[i] << ", "
@@ -183,7 +185,7 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0;
 	 i < statistics.size() && i < numberOfClusters.size();
 	 ++i ) {
-      std::cout << instances.rows << ", "
+      std::cout << instances.rows() << ", "
 		<< nHistograms << ", "
 		<< histSize << ", "
 		<< numberOfClusters[i] << ", "
