@@ -1,6 +1,8 @@
 
 #include <iostream>
 
+#include "tclap/CmdLine.h"
+
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkVectorIndexSelectionCastImageFilter.h"
@@ -9,19 +11,71 @@
 #include "ImageToEmphysemaFeaturesFilter.h"
 #include "Path.h"
 
+const std::string VERSION("0.1");
 const std::string OUT_FILE_TYPE(".nii.gz");
 
 int main( int argc, char* argv[] ) {
-  if( argc < 5 ) {
-    std::cerr << "Usage: " << std::endl;
-    std::cerr << argv[0] << "  inputImageFile  inputMaskFile  scale  outBaseName" << std::endl;
-    return EXIT_FAILURE;
-    }
+    // Commandline parsing
+  TCLAP::CmdLine cmd("Create a bag of instances samples from an image.", ' ', VERSION);
 
-  const std::string imageFile(argv[1]);
-  const std::string maskFile(argv[2]);
-  const float scale = std::atof(argv[3]);
-  const std::string outBaseName(argv[4]);
+  //
+  // Required arguments
+  //
+  
+  // We need a single image
+  TCLAP::ValueArg<std::string> 
+    imageArg("i", 
+	     "image", 
+	     "Path to image.",
+	     true,
+	     "",
+	     "path", 
+	     cmd);
+
+  // We need a single mask
+  TCLAP::ValueArg<std::string> 
+    maskArg("m", 
+	    "mask", 
+	    "Path to mask.",
+	    true,
+	    "",
+	    "path", 
+	    cmd);
+
+  
+  // We need a directory for storing the ROIs
+  TCLAP::ValueArg<std::string> 
+    outArg("o", 
+	   "out", 
+	   "Base output path",
+	   true, 
+	   "", 
+	   "path", 
+	   cmd);
+
+  // We need scales for the multi scale features
+  TCLAP::MultiArg<float> 
+    scalesArg("s", 
+	      "scale", 
+	      "Scales for the Gauss applicability function",
+	      true, 
+	      "double", 
+	      cmd);
+  try {
+    cmd.parse(argc, argv);
+  } catch(TCLAP::ArgException &e) {
+    std::cerr << "Error : " << e.error() 
+	      << " for arg " << e.argId() 
+	      << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  // Store the arguments
+  const std::string imagePath( imageArg.getValue() );
+  const std::string maskPath( maskArg.getValue() );
+  const std::string outBasePath( outArg.getValue() );
+  const std::vector< float > scales( scalesArg.getValue() );
+  //// Commandline parsing is done ////
   
   
   typedef float PixelType;
@@ -35,11 +89,11 @@ int main( int argc, char* argv[] ) {
   // Setup the reader
   typedef itk::ImageFileReader< ImageType > ReaderType;
   ReaderType::Pointer reader = ReaderType::New();
-  reader->SetFileName( imageFile );
+  reader->SetFileName( imagePath );
 
   typedef itk::ImageFileReader< MaskType > MaskReaderType;
   MaskReaderType::Pointer maskReader = MaskReaderType::New();
-  maskReader->SetFileName( maskFile );
+  maskReader->SetFileName( maskPath );
 
   // Setup the clamp filter
   typedef itk::ClampImageFilter< MaskType,
@@ -58,7 +112,6 @@ int main( int argc, char* argv[] ) {
   FeatureFilterType::Pointer featureFilter = FeatureFilterType::New();
   featureFilter->SetInputImage( reader->GetOutput() );
   featureFilter->SetInputMask( clampFilter->GetOutput() );
-  featureFilter->SetSigma( scale );
   
   typedef itk::VectorIndexSelectionCastImageFilter<VectorImageType, ImageType>
     IndexSelectionType;
@@ -76,20 +129,27 @@ int main( int argc, char* argv[] ) {
       "LaplacianOfGaussian", "GaussianCurvature", "FrobeniusNorm"
       };
   
-  for (unsigned int i = 0; i < featureNames.size(); ++i ) {
-    indexSelectionFilter->SetIndex( i );
-    std::string outFile = outBaseName + featureNames[i] + OUT_FILE_TYPE;
-    writer->SetFileName( outFile );
-    try {
-      writer->Update();
-    }
-    catch ( itk::ExceptionObject &e ) {
-      std::cerr << "Failed to process." << std::endl
-  		<< "Image: " << argv[1] << std::endl
-		<< "Mask: " << argv[2] << std::endl
-  		<< "Out: " << argv[3] << std::endl
-  		<< "ExceptionObject: " << e << std::endl;
-      return EXIT_FAILURE;
+  for ( auto scale : scales ) {
+    featureFilter->SetSigma( scale );
+
+    for (unsigned int i = 0; i < featureNames.size(); ++i ) {
+      indexSelectionFilter->SetIndex( i );
+      std::string outPath = outBasePath
+	+ "_scale_" + std::to_string(scale)
+	+ featureNames[i] + OUT_FILE_TYPE;
+      writer->SetFileName( outPath );
+      try {
+	featureFilter->UpdateLargestPossibleRegion();
+	writer->Update();
+      }
+      catch ( itk::ExceptionObject &e ) {
+	std::cerr << "Failed to process." << std::endl
+		  << "Image: " << imagePath << std::endl
+		  << "Mask: " << maskPath << std::endl
+		  << "Out: " << outPath << std::endl
+		  << "ExceptionObject: " << e << std::endl;
+	return EXIT_FAILURE;
+      }
     }
   }
 

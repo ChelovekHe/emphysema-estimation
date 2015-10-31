@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import sys, os, os.path, subprocess, math, csv, random
+import sys, os, os.path, subprocess, math, csv, random, re
 from Util import intersperse 
 
 def main():
@@ -13,8 +13,8 @@ def main():
     dirs = {
         'FileLists' : os.path.join(basedir, 'FileLists'),
         'Histograms' : os.path.join(basedir, 'Histograms'),
-        'Bin' : '../../../Build',
-        'Scripts' : '../../../Scripts'
+        'Bin' : '../../Build',
+        'Scripts' : os.path.join(basedir, 'Scripts'),
     }
     
     files = {
@@ -22,8 +22,8 @@ def main():
     }
     
     progs = {
-        'ComputeJointHistograms' : os.path.join(dirs['Bin'],'Statistics/ComputeJointHistograms'),
-        'PlotJointHistogram' : os.path.join(dirs['Scripts'], 'PlotJointHistograms.R'),
+        'ComputeJointHistogram' : os.path.join(dirs['Bin'],'Statistics/ComputeJointHistogram'),
+        'PlotJointHistogram' : os.path.join(dirs['Scripts'],'PlotJointHistogram.R'),
     }
 
 
@@ -48,7 +48,7 @@ def main():
             args = [
                 progs['ComputeJointHistogram'],
                 '--image-1', image,
-                '--image-2', reference
+                '--image-2', reference,
                 '--mask', mask,
                 '--out', hist + '.txt',
                 ]
@@ -61,12 +61,19 @@ def main():
     if skip['Make plots']:
         print( 'Skipping: Make plots' )
     else:
+        featurePattern = re.compile('.*[0-9]{6}(.*)\.nii\.gz.*')
+        lungStylePattern = re.compile('.*lungs-(.*)\.dcm.*')
+        scalePattern = re.compile('.*scale_([01]\.[26]).*')
         print( 'Making plots' )
         for _,_,_,hist in imageReferenceMaskHistList:
+            featureName = featurePattern.match(hist).group(1)
+            lungStyle = lungStylePattern.match(hist).group(1)
+            scale = scalePattern.match(hist).group(1)
             args = [
                 progs['PlotJointHistogram'],
                 hist + '.txt',
-                hist + '.ps'
+                hist + '.png',
+                "%s: %s @ %s" % (lungStyle, featureName, scale),
             ]
             print(' '.join(args))        
             if subprocess.call( args ) != 0:

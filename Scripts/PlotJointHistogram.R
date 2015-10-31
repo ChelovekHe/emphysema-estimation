@@ -3,97 +3,38 @@
 # Plot a joint histogram and save it as a postscript file
 
 main <- function(options) {
-    if ( length(options) < 2 ) {
-        print( "Usage: <histogram-path> <output-path>" );
+    if ( length(options) < 3 ) {
+        print( "Usage: <histogram-path> <output-path> <title>" );
         quit( status = 1 );
     }
-    PlotJointHistogram( options[1], options[2] );
+    PlotJointHistogram( options[1], options[2], options[3] );
     quit( status = 0 );
 }
 
 
 
-PlotJointHistogram <- function(inpath,outpath) {
+PlotJointHistogram <- function(inpath,outpath,title) {
     data <- read.table(inpath, header=F);
     labels.y <- rev(as.character(data[-1,1]));
     labels.x <- as.character(data[1,-1]);
-    imdata <- apply(as.matrix(data[-1,-1]),2,rev);
+    nLabels <- 10;
+    imdata <- as.matrix(data[-1,-1]);
 
-    postscript(file=outpath, bg="white" );
-    myImagePlot(imdata, xLabels=labels.x, yLabels=labels.y);
+    png(file=outpath, bg="white" );
+    labels.y.idx <- round(seq(1, length(labels.y), length(labels.y)/nLabels));
+    labels.x.idx <- round(seq(1, length(labels.x), length(labels.x)/nLabels));
+    par('mar'=c(5,5,5,5))
+    filled.contour(
+        imdata,
+        color.palette=topo.colors,
+        plot.title=title(main=title, ylab="  ", xlab="Calculated"),
+        plot.axes= {
+            axis(1, at=seq(0,1,by=1/(nLabels-1)), labels=labels.x[labels.x.idx]);
+            axis(2, at=seq(0,1,by=1/(nLabels-1)), labels=rev(labels.y[labels.y.idx]))
+        }
+    );
     dev.off();
 }
-
-
-# src: http://www.phaget4.org/R/image_matrix.html
-# ----- Define a function for plotting a matrix ----- #
-myImagePlot <- function(x, ...){
-     min <- min(x)
-     max <- max(x)
-     yLabels <- rownames(x)
-     xLabels <- colnames(x)
-     title <-c()
-  # check for additional function arguments
-  if( length(list(...)) ){
-    Lst <- list(...)
-    if( !is.null(Lst$zlim) ){
-       min <- Lst$zlim[1]
-       max <- Lst$zlim[2]
-    }
-    if( !is.null(Lst$yLabels) ){
-       yLabels <- c(Lst$yLabels)
-    }
-    if( !is.null(Lst$xLabels) ){
-       xLabels <- c(Lst$xLabels)
-    }
-    if( !is.null(Lst$title) ){
-       title <- Lst$title
-    }
-  }
-# check for null values
-if( is.null(xLabels) ){
-   xLabels <- c(1:ncol(x))
-}
-if( is.null(yLabels) ){
-   yLabels <- c(1:nrow(x))
-}
-
-layout(matrix(data=c(1,2), nrow=1, ncol=2), widths=c(4,1), heights=c(1,1))
-
- # Red and green range from 0 to 1 while Blue ranges from 1 to 0
- ColorRamp <- rgb( seq(0,1,length=256),  # Red
-                   seq(0,1,length=256),  # Green
-                   seq(1,0,length=256))  # Blue
- ColorLevels <- seq(min, max, length=length(ColorRamp))
-
- # Reverse Y axis
- reverse <- nrow(x) : 1
- yLabels <- yLabels[reverse]
- x <- x[reverse,]
-
- # Data Map
- par(mar = c(3,5,2.5,2))
- image(1:length(xLabels), 1:length(yLabels), t(x), col=ColorRamp, xlab="",
- ylab="", axes=FALSE, zlim=c(min,max))
- if( !is.null(title) ){
-    title(main=title)
- }
-axis(BELOW<-1, at=1:length(xLabels), labels=xLabels, cex.axis=0.7)
- axis(LEFT <-2, at=1:length(yLabels), labels=yLabels, las= HORIZONTAL<-1,
- cex.axis=0.7)
-
- # Color Scale
- par(mar = c(3,2.5,2.5,2))
- image(1, ColorLevels,
-      matrix(data=ColorLevels, ncol=length(ColorLevels),nrow=1),
-      col=ColorRamp,
-      xlab="",ylab="",
-      xaxt="n")
-
- layout(1)
-}
-# ----- END plot function ----- #
-
 
 options <- commandArgs(trailingOnly=TRUE);
 main(options);
