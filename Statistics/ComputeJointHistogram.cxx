@@ -3,13 +3,16 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <cmath>
 
 #include "tclap/CmdLine.h"
 
+#include "itkClampImageFilter.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkImageToHistogramFilter.h"
+#include "itkMaskedImageToHistogramFilter.h"
 #include "itkJoinImageFilter.h"
 #include "itkHistogramToIntensityImageFilter.h"
 #include "itkHistogramToProbabilityImageFilter.h"
@@ -42,6 +45,16 @@ int main(int argc, char *argv[]) {
 	     "",
 	     "path", 
 	     cmd);
+
+  TCLAP::ValueArg<std::string> 
+    maskArg("m", 
+	    "mask", 
+	    "Path to mask image.",
+	    false,
+	    "",
+	    "path", 
+	    cmd);
+
   
   TCLAP::ValueArg<std::string> 
     outArg("o", 
@@ -63,8 +76,8 @@ int main(int argc, char *argv[]) {
 	     cmd);
 
   TCLAP::ValueArg<double> 
-    minValueArg("m", 
-		"min", 
+    minValueArg("l", 
+		"lower-bound", 
 		"Smallest value to include in histogram. Determined automatically if not set.",
 		false, 
 		NAN, 
@@ -72,8 +85,8 @@ int main(int argc, char *argv[]) {
 		cmd);
 
   TCLAP::ValueArg<double> 
-    maxValueArg("M", 
-		"max", 
+    maxValueArg("u",
+		"upper-bound", 
 		"Largest value to include in histogram. Determined automatically if not set.",
 		false, 
 		NAN, 
@@ -92,12 +105,15 @@ int main(int argc, char *argv[]) {
   // Store the arguments
   const std::string image1Path( image1Arg.getValue() );
   const std::string image2Path( image2Arg.getValue() );
+  const std::string maskPath( maskArg.getValue() );
   const std::string outPath( outArg.getValue() );
   const unsigned int nBins( nBinsArg.getValue() );
   const double minValue( minValueArg.getValue() );
   const double maxValue( maxValueArg.getValue() );
   //// Commandline parsing is done ////
 
+  const bool useMask = ! maskPath.empty();
+  
   // Some common values/types that are always used.
   const unsigned int Dimension = 3;
 
@@ -106,6 +122,10 @@ int main(int argc, char *argv[]) {
   typedef itk::Image< PixelType, Dimension >  ImageType;
   typedef itk::ImageFileReader< ImageType > ReaderType;
 
+  typedef unsigned char MaskPixelType;
+  typedef itk::Image< MaskPixelType, Dimension >  MaskImageType;
+  typedef itk::ImageFileReader< MaskImageType > MaskReaderType;
+
   // Setup the readers
   ReaderType::Pointer reader1 = ReaderType::New();
   reader1->SetFileName( image1Path );
@@ -113,34 +133,69 @@ int main(int argc, char *argv[]) {
   ReaderType::Pointer reader2 = ReaderType::New();
   reader2->SetFileName( image2Path );
 
+  MaskReaderType::Pointer maskReader = MaskReaderType::New();
+  maskReader->SetFileName( maskPath );
+
   // Hack to get join filter to accept different origin/spacing setting
   try {
     reader1->Update();
     reader2->Update();
+    if ( useMask ) {
+      maskReader->Update();
+    }
   }
   catch ( itk::ExceptionObject &e ) {
     std::cerr << "Error updating readers." << std::endl
 	      << "ExceptionObject: " << e << std::endl;
     return EXIT_FAILURE;
   }
+  
   reader2->GetOutput()->SetOrigin( reader1->GetOutput()->GetOrigin() );
   reader2->GetOutput()->SetSpacing( reader1->GetOutput()->GetSpacing() );
-
+  if ( useMask ) {
+    maskReader->GetOutput()->SetOrigin( reader1->GetOutput()->GetOrigin() );
+    maskReader->GetOutput()->SetSpacing( reader1->GetOutput()->GetSpacing() );
+  }
   
   // Setup the join filter
   typedef itk::JoinImageFilter< ImageType, ImageType > JoinFilterType;
   JoinFilterType::Pointer joinFilter = JoinFilterType::New();
   joinFilter->SetInput1( reader1->GetOutput() );
   joinFilter->SetInput2( reader2->GetOutput() );
+
+
+  // Setup up the clamp filter
+  typedef itk::ClampImageFilter< MaskImageType, MaskImageType> ClampFilterType;
+  ClampFilterType::Pointer clampFilter = ClampFilterType::New();
+  clampFilter->SetInput( maskReader->GetOutput() );
+  clampFilter->SetBounds(0,1);
   
 
   // Setup the histogram filter
   typedef typename JoinFilterType::OutputImageType JoinImageType;
   typedef itk::Statistics::ImageToHistogramFilter< JoinImageType > HistogramFilterType;
   typedef typename HistogramFilterType::HistogramSizeType HistogramSizeType;
-  HistogramFilterType::Pointer histogramFilter = HistogramFilterType::New();
-  histogramFilter->SetInput( joinFilter->GetOutput() );
+  typedef itk::Statistics::MaskedImageToHistogramFilter<
+    JoinImageType,
+    MaskImageType > MaskedHistogramFilterType;
+  typedef HistogramFilterType::HistogramMeasurementVectorType
+    HistogramMeasurementVectorType;
+  
+  typedef typename HistogramFilterType::HistogramType HistogramType;
+  HistogramType::Pointer histogram;
 
+  HistogramFilterType::Pointer histogramFilter;  
+  if ( useMask ) {
+    MaskedHistogramFilterType::Pointer maskedHistogramFilter = MaskedHistogramFilterType::New();    
+    maskedHistogramFilter->SetMaskImage( clampFilter->GetOutput() );
+    maskedHistogramFilter->SetMaskValue( 1 );
+    histogramFilter = maskedHistogramFilter;
+  }
+  else {
+    histogramFilter = HistogramFilterType::New();
+  }
+  
+  histogramFilter->SetInput( joinFilter->GetOutput() );
   HistogramSizeType histogramSize(2);
   histogramSize.Fill( nBins );
   histogramFilter->SetHistogramSize( histogramSize );
@@ -150,8 +205,6 @@ int main(int argc, char *argv[]) {
     histogramFilter->SetAutoMinimumMaximum( true );
   }
   else {
-    typedef HistogramFilterType::HistogramMeasurementVectorType
-      HistogramMeasurementVectorType;
     HistogramMeasurementVectorType binMinimum( 2 );
     HistogramMeasurementVectorType binMaximum( 2 );
     binMinimum.Fill( minValue );
@@ -159,57 +212,51 @@ int main(int argc, char *argv[]) {
     histogramFilter->SetHistogramBinMinimum( binMinimum );
     histogramFilter->SetHistogramBinMaximum( binMaximum );
   }
-
-
-  // Setup the histogram to image filter
-  typedef typename HistogramFilterType::HistogramType HistogramType;
-  typedef itk::Image<float, 2> FrequencyImageType;
-
-  typedef itk::HistogramToIntensityImageFilter<
-    HistogramType,
-    FrequencyImageType
-    >
-    HistogramToImageFilterType;  
-  HistogramToImageFilterType::Pointer histogramToImageFilter =
-    HistogramToImageFilterType::New();
-  histogramToImageFilter->SetInput( histogramFilter->GetOutput() );
-
-
-  typedef FrequencyImageType OutputImageType;
-  //  typedef typename HistogramToImageFilterType::OutputImageType
-  //FrequencyImageType;
-  // typedef unsigned char OutputPixelType;
-  // typedef itk::RGBPixel<OutputPixelType>    RGBPixelType;
-  // typedef itk::Image<RGBPixelType, 2>  OutputImageType;
-  // typedef itk::ScalarToRGBColormapImageFilter<
-  //   FrequencyImageType,
-  //   OutputImageType > RGBFilterType;
-  // RGBFilterType::Pointer rescaleFilter = RGBFilterType::New();
-  // rescaleFilter->SetInput( histogramToImageFilter->GetOutput() );
-  // rescaleFilter->SetColormap( RGBFilterType::Hot );
-  //rescaleFilter->SetBounds( 0, 255 );
-  // rescaleFilter->SetOutputMinimum( 0 );
-  // rescaleFilter->SetOutputMaximum(  );
-  
-  
-  // Setup the writer
-  typedef itk::ImageFileWriter< OutputImageType > ImageWriter;
-  ImageWriter::Pointer writer = ImageWriter::New();
-  writer->SetFileName( outPath );
-  writer->SetInput( histogramToImageFilter->GetOutput() );
-
+    
   try {
-    writer->Update();
+    histogramFilter->Update();
   }
   catch ( itk::ExceptionObject &e ) {
-    std::cerr << "Failed to process." << std::endl
-	      << "image1Path: " <<  image1Path << std::endl
-      	      << "image1Path: " <<  image2Path << std::endl
-	      << "outPath: " << outPath << std::endl
+    std::cerr << "Error updating masked histogram filter." << std::endl
 	      << "ExceptionObject: " << e << std::endl;
     return EXIT_FAILURE;
   }
+  histogram = histogramFilter->GetOutput();
+
+  typedef typename HistogramType::ConstIterator ConstIteratorType;
+  std::ofstream out( outPath );
+  // Writer a header
+  out << "BinCenters ";
+  size_t i = 0;
+  for ( ConstIteratorType iter = histogram->Begin();
+	iter != histogram->End();
+	++iter ) {
+    out << '"' << iter.GetMeasurementVector()[0] << '"';
+    if ( ++i == nBins ) {
+      out << '\n';
+      break;
+    }
+    else {
+      out << ' ';
+    }
+  }
+  
+  i = 0;
+  for ( ConstIteratorType iter = histogram->Begin();
+	iter != histogram->End();
+	++iter ) {
+    if ( i == 0 ) {
+      out << '"' << iter.GetMeasurementVector()[1] << "\" ";
+    }
+    out << iter.GetFrequency();
+    if ( ++i == nBins ) {
+      out << '\n';
+      i = 0;
+    }
+    else {
+      out << ' ';
+    }
+  }
 
   return EXIT_SUCCESS;
-}
-     
+}     
