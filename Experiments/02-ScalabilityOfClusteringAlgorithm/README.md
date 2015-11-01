@@ -23,7 +23,7 @@ These are used unless specified otherwise.
 
 ### Experiments ###
 * Scalability-1: Set branching equal to number of clusters. 
-* Scalability-2: Fix branching at 16. Set Number of clusters = [16, 32, 64].
+* Scalability-2: Fix branching at 16. Set Number of clusters = [16, 31, 61].
 * Scalability-3: Set branching = number of clusters = 32. Set number of clusters = 2500. Run through cachegrind to profile program execution.
 
 ## Output ##

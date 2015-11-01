@@ -35,7 +35,7 @@ def main():
     }
     
     params = {
-        'clusters' : [16, 32, 64],
+        'clusters' : [16, 31, 61],
         'histograms' : 7*8, # 7 scales * 8 features
         'burnin' : 10,
         'iterations' : 100,
