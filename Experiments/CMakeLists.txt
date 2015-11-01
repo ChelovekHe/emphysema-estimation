@@ -1,3 +1,3 @@
 project( EE_Experiments )
 
-add_subdirectory( Experiment-1 )
+add_subdirectory( 02-ScalabilityOfClusteringAlgorithm )
