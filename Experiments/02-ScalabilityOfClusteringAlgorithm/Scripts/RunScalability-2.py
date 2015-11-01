@@ -15,7 +15,7 @@ def main():
 
     dirs = {
         'Instances' : os.path.join(basedir, 'Data', 'Instances'),
-        'Statistics' : os.path.join(basedir, 'Data', 'Statistics', 'Scalability-2'),
+        'Statistics' : os.path.join(basedir, 'Statistics', 'Scalability-2'),
         'Bin' : '../../Build',
     }
     
@@ -46,7 +46,7 @@ def main():
         print( 'Skipping: Measure' )
     else:
         print( 'Measuring' )
-        for instanceMatrix in files['instances']:
+        for instanceMatrix in files['Instances']:
             args = [
                 progs['Scalability'],
                 '--input', instanceMatrix,

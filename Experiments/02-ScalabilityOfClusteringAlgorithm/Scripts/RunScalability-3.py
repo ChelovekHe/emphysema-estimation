@@ -15,7 +15,7 @@ def main():
 
     dirs = {
         'Instances' : os.path.join(basedir, 'Data', 'Instances'),
-        'Profiling' : os.path.join(basedir, 'Data', 'Profiling'),
+        'Profiling' : os.path.join(basedir, 'Profiling'),
         'Bin' : '../../Build',
     }
     
@@ -43,7 +43,7 @@ def main():
         print( 'Profiling' )
         args = progs['cachegrind'] + [
             progs['Scalability'],
-            '--input', files['instances'],
+            '--input', files['Instances'],
             '--nHistograms', "%d" % params['histograms'],
             '--output', files['Profile'],
             '--burnin', "%d" % params['burnin'],
