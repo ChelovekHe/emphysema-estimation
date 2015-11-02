@@ -12,12 +12,14 @@ Run the `KMeansClusterer` several times with increasing k and increasing number 
 
 ### Common parameters ###
 These are used unless specified otherwise.
+
 * Number of samples = [500, 1000, 2500, 5000, 7500, 10000]
 * Number of clusters = [4, 8, 16, 32, 64]
 * Number of burnin iterations  = 10
 * Nuber of measurement iterations = 100
 
 `KMeansClusterer` implementation parameters
+
 * `iterations` is set to default value (= 11)
 * `centers_init` is set to `CENTERS_KMEANSPP`
 
