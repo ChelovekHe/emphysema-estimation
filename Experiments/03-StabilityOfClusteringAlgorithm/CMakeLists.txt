@@ -9,6 +9,8 @@ set( LIBS
 
 set( progs 
   Stability
+  RandomCentersDistance
+  RandomCentersDistance2
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
