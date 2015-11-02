@@ -12,6 +12,7 @@ def main():
         'Stability-2' : False,
         'Stability-3' : False,
         'Stability-4' : False,
+        'Stability-5' : False,
     }
         
     basedir = ''
@@ -24,7 +25,7 @@ def main():
     
     files = {
         'Instances' : [
-            os.path.join(dirs['Instances'], 'instances500.csv'),
+            os.path.join(dirs['Instances'], 'instances1000.csv'),
         ],
     }
     
@@ -86,7 +87,7 @@ def main():
                 print(' '.join(args))        
                 if subprocess.call( args ) != 0:
                     print( 'Error running', ex, '.Using:', instanceMatrix )
-                return 1
+                    return 1
     return 0
 
 if __name__ == '__main__':

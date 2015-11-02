@@ -28,10 +28,10 @@ def main():
 
     files = {}
     for ex in experiments:
-        files[ex]['infile'] = os.path.join(dirs['Distances'],
-                                           infilePattern % ex)
-        files[ex]['outfile'] = os.path.join(dirs['Plots'],
-                                            outfilePattern % ex)
+        files[ex] = {
+            'infile' : os.path.join(dirs['Distances'], infilePattern % ex),
+            'outfile' : os.path.join(dirs['Plots'], outfilePattern % ex)
+        }
     
     progs = {
         'Plot' : os.path.join(dirs['Scripts'], 'StabilityPlots.R'),
