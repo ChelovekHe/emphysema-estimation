@@ -1,0 +1,4 @@
+numSamples, numHistograms, histSize, k, branching, meanTime, stddevTime
+7500, 56, 41, 16, 16, 21300.4, 163.559
+7500, 56, 41, 31, 16, 21268.6, 153.487
+7500, 56, 41, 61, 16, 21516.8, 379.804
