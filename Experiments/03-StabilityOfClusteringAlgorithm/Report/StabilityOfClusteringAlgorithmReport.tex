@@ -1,0 +1,45 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{lmodern}
+\usepackage[]{fullpage}
+\usepackage{hyperref}
+
+\usepackage{graphicx}
+\graphicspath{ {../Plots/} }
+
+\begin{document}
+\title{\vspace{-2.5cm}Stability Of Clustering Algorithm}
+\author{Silas Nyboe Ørting}
+\maketitle
+\thispagestyle{empty}
+
+\input{README.tex}
+
+\pagebreak
+\section{Plots}
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=385pt]{Stability-1_DistanceDistribution.pdf}
+  \includegraphics[width=385pt]{Stability-2_DistanceDistribution.pdf}
+  \caption{Stability-1 and 2}
+  \label{fig:stability-1-2}
+\end{figure}
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=385pt]{Stability-3_DistanceDistribution.pdf}
+  \includegraphics[width=385pt]{Stability-4_DistanceDistribution.pdf}
+  \caption{Stability-3 and 4}
+  \label{fig:stability-3-4}
+\end{figure}
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=385pt]{Stability-5_DistanceDistribution.pdf}
+  \caption{Stability-5}
+  \label{fig:stability-5}
+\end{figure}
+
+\end{document}
