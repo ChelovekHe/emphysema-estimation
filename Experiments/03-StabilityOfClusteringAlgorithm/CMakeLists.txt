@@ -1,4 +1,4 @@
-project( EE_ScalabilityOfClusteringAlgorithm )
+project( EE_StabilityOfClusteringAlgorithm )
 
 set( LIBS
   ${ITK_LIBRARIES}
