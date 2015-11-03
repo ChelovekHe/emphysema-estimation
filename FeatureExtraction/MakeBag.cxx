@@ -244,27 +244,20 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
   }
-  else {   
+  else {
     // Read the roi specification
-    std::ifstream is( roiPath );
-    const std::streamsize count =
-      std::numeric_limits<std::streamsize>::max();
-    // Discard header by ignoring the first line
-    is.ignore(count , '\n' );
-    while ( is.good() ) {
-      IndexType start;
-      SizeType size;
-      is.ignore( count, '[' );
-      is >> start[0]; is.ignore( count, ',' );
-      is >> start[1]; is.ignore( count, ',' );
-      is >> start[2]; is.ignore( count, '[' );
-      is >> size[0];  is.ignore( count, ',' );
-      is >> size[1];  is.ignore( count, ',' );
-      is >> size[2];  is.ignore( count, '\n' );
-      rois.emplace_back( RegionType( start, size ) );
+    try {
+      rois = ROIReaderType::read( roiPath );
+      std::cout << "Got " << rois.size() << " rois." << std::endl;
+    }
+    catch ( std::exception &e ) {
+      std::cerr << "Error reading ROIs" << std::endl
+		<< "roiPath: " << roiPath << std::endl
+		<< "exception: " << e.what() << std::endl;
+      return EXIT_FAILURE;
     }
   }
-  // Now we have the rois
+  
   
   // Setup the histogram containers
   typedef DenseHistogram< PixelType > HistogramType;
