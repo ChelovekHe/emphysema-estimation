@@ -22,6 +22,7 @@
 #include "IO.h"
 #include "Path.h"
 #include "RegionOfInterestGenerator.h"
+#include "ROIReader.h"
 
 const std::string VERSION("0.1");
 const std::string OUT_FILE_TYPE(".txt");
@@ -246,6 +247,7 @@ int main(int argc, char *argv[]) {
   }
   else {
     // Read the roi specification
+    typedef ROIReader< RegionType > ROIReaderType;
     try {
       rois = ROIReaderType::read( roiPath );
       std::cout << "Got " << rois.size() << " rois." << std::endl;
