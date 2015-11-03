@@ -5,6 +5,7 @@ import sys, subprocess
 def main():
     progs = [
         './GenerateFeatureImages.py',
+        './GeneratePatches.py',
         './GenerateJointHistograms.py'
     ]
 
