@@ -142,16 +142,15 @@ int main(int argc, char *argv[]) {
     std::cerr << "Could not write to file " << outputPath << std::endl;
     return EXIT_FAILURE;
   }
-  
+  ClustererType clusterer( branching, iterations, centers_init );
   for ( const auto k : nClusters ) {
     std::cout << "Finding cluster centers:" << std::endl
 	      << "branching " << branching << std::endl
 	      << "k = " << k << std::endl;
     std::vector< MatrixType > allCenters;
-    ClustererType clusterer( k, instances.cols(), branching, iterations, centers_init );
     for ( size_t i = 0; i < nIterations; ++i ) {
       try {
-	allCenters.push_back( clusterer.cluster(instances, dist) );
+	allCenters.push_back( clusterer.cluster(instances, dist, k).centers );
       }
       catch ( flann::FLANNException& e ) {
 	std::cerr << "Clusterer failed: " << e.what() << std::endl
