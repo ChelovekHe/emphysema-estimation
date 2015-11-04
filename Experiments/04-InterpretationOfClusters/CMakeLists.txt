@@ -1,4 +1,4 @@
-project( EE_StabilityOfClusteringAlgorithm )
+project( EE_InterpretationOfClusters )
 
 set( LIBS
   ${ITK_LIBRARIES}
@@ -7,10 +7,8 @@ set( LIBS
   )
 
 
-set( progs 
-  Stability
-  RandomCentersDistance
-  RandomCentersDistance2
+set( progs
+  ClusterInterpretation
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )

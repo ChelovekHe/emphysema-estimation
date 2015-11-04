@@ -147,13 +147,13 @@ int main(int argc, char *argv[]) {
     std::cout << "k = " << k << std::endl
 	      << "branching = " << branching << std::endl;
     
-    ClustererType clusterer( k, instances.cols(), branching, kmeans_iterations, centers_init );
+    ClustererType clusterer( branching, kmeans_iterations, centers_init );
 
     std::cout << "Burning " << burnin << " measurements."  << std::endl;    
     for ( size_t i = 0; i < burnin; ++i ) {
       try {
-	RuntimeMeasurement<>::execution([&clusterer, &instances, &dist]() {
-	    return clusterer.cluster(instances, dist);
+	RuntimeMeasurement<>::execution([&clusterer, &instances, &dist, k]() {
+	    return clusterer.cluster(instances, dist, k);
 	  });
       }
       catch ( flann::FLANNException& e ) {
@@ -168,8 +168,8 @@ int main(int argc, char *argv[]) {
       try {
 	measurements[i] =
 	  static_cast<double>(
-			      RuntimeMeasurement<>::execution([&clusterer, &instances, &dist]() {
-				  return clusterer.cluster(instances, dist);
+			      RuntimeMeasurement<>::execution([&clusterer, &instances, &dist, k]() {
+				  return clusterer.cluster(instances, dist, k);
 				}));
 	std::cout << "Measurement " << i << " = " << measurements[i] << std::endl;
       }
