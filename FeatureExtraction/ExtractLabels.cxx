@@ -30,7 +30,6 @@ int main( int argc, char* argv[] ) {
 	     "path", 
 	     cmd);
 
-  // We need a single mask
   TCLAP::ValueArg<std::string> 
     roiArg("r", 
 	   "roi", 
@@ -39,6 +38,32 @@ int main( int argc, char* argv[] ) {
 	   "",
 	   "path", 
 	   cmd);
+
+  TCLAP::ValueArg<bool> 
+    roiHasHeaderArg("R", 
+		    "roi-has-header", 
+		    "Flag indicating if the ROI file has a header.",
+		    false,
+		    false,
+		    "boolean", 
+		    cmd);
+
+  TCLAP::MultiArg<unsigned int> 
+    ignoreArg("g", 
+	      "ignore", 
+	      "Values to ignore.",
+	      false,
+	      "unsigned char", 
+	      cmd);
+
+  TCLAP::ValueArg<int> 
+    dominantArg("d", 
+	       "dominant", 
+	       "If set, then this label will always be used if at least one pixel has the label.",
+	       false,
+	       -1,
+	       "unsigned char", 
+	       cmd);
 
   
   // We need a directory for storing the ROIs
@@ -63,14 +88,36 @@ int main( int argc, char* argv[] ) {
   // Store the arguments
   const std::string imagePath( imageArg.getValue() );
   const std::string roiPath( roiArg.getValue() );
+  const bool roiHasHeader( roiHasHeaderArg.getValue() );
   const std::string outPath( outArg.getValue() );
+  const std::vector<unsigned int> ignoredLabels( ignoreArg.getValue() );
+  const int dominantLabel( dominantArg.getValue() );
   //// Commandline parsing is done ////
   
   // It is assumed that we use unsigned char and we have 3D images
-  typedef char PixelType;
+  typedef unsigned char PixelType;
   const unsigned int Dimension = 3;
   typedef itk::Image< PixelType, Dimension > ImageType;
 
+  // Check the dominant label
+  if ( dominantLabel > std::numeric_limits<PixelType>::max() ) {
+    std::cerr << "dominant label is to large" << std::endl
+	      << "dominantLabel" << dominantLabel << std::endl
+	      << "label max" << std::numeric_limits<PixelType>::max() << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  // Check the ignore labels
+  for ( auto ignoredLabel : ignoredLabels ) {
+    if ( ignoredLabel > std::numeric_limits<PixelType>::max() ) {
+      std::cerr << "Ignored label is to large" << std::endl
+		<< "Ignored label" << ignoredLabel << std::endl
+		<< "label max" << std::numeric_limits<PixelType>::max() << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
+
+  
   // Setup the ROI reader
   typedef typename ImageType::RegionType RegionType;
   typedef ROIReader< RegionType > ROIReaderType;
@@ -95,7 +142,7 @@ int main( int argc, char* argv[] ) {
   // Read the roi specification
   std::vector< RegionType > rois;
   try {
-    rois = ROIReaderType::read( roiPath );
+    rois = ROIReaderType::read( roiPath, roiHasHeader );
     std::cout << "Got " << rois.size() << " rois." << std::endl;
   }
   catch ( std::exception &e ) {
@@ -138,18 +185,30 @@ int main( int argc, char* argv[] ) {
 		<< "ExceptionObject: " << e << std::endl;
       return EXIT_FAILURE;
     }
-
-    // Find the mode of the counts
-    auto mode =
-      std::max_element( counts.begin(),
-			counts.end(),
-			[](const MapValueType& a,
-			   const MapValueType& b) {
-			  return a.second < b.second;
-			} );
-
-    // Output the pixel value of the mode
-    out << std::to_string(mode->first) << std::endl; // flush so we can see what happens
+    
+    // Set ignored labels to zero
+    for ( auto ignoredLabel : ignoredLabels ) {
+      counts[ignoredLabel] = 0;
+    }
+    
+    // Check for presence of possibly dominating label
+    PixelType label;
+    if ( dominantLabel > -1 && counts.count(dominantLabel) > 0 ) {
+      label = dominantLabel;
+    }
+    else {
+      // Find the mode of the counts
+      auto mode =
+	std::max_element( counts.begin(),
+			  counts.end(),
+			  [](const MapValueType& a,
+			     const MapValueType& b) {
+			    return a.second < b.second;
+			  } );
+      label = mode->first;
+    }
+    
+    out << std::to_string(label) << std::endl; // flush so we can see what happens
   }
 
   return EXIT_SUCCESS;
