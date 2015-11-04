@@ -5,18 +5,26 @@ import sys, os, os.path, subprocess, math, csv
 from Util import intersperse 
 
 def main():
-    basedir = '../Data/Dataset-2'
+    # Set to False to actually do something
+    skip = {
+        'Make bags' : False,
+        'Make instance matrices' : False,
+    }
+
+    basedir = './'
 
     dirs = {
         'Bags' : os.path.join(basedir, 'Bags'),
         'Histograms' : os.path.join(basedir, 'Histograms'),
         'FileLists' : os.path.join(basedir, 'FileLists'),
-        'Bin' : '../Build'
+        'Instances' : os.path.join(basedir, 'Instances'),
+        'Bin' : '../../Build'
     }
     
     files = {
         'ScanMaskList' : os.path.join(dirs['FileLists'], 'ScanMaskList.csv'),
         'HistogramSpec' : os.path.join(dirs['Histograms'], 'Dataset-3-HistogramSpec.txt'),
+        'InstanceMatrixBaseName' : os.path.join(dirs['Instances'], 'instances%d.csv'),
     }
     
     progs = {
@@ -35,27 +43,46 @@ def main():
     print( 'Making bags' )
     with open(files['ScanMaskList']) as infile:
         scanMaskList = [(row[0].strip(), row[1].strip()) for row in csv.reader(infile)]
+
+    if skip['Make bags']:
+        print( 'Skipping: Make bags' )
+    else:
+        print( 'Making bags' )                        
+        for scan, mask in scanMaskList:
+            print( "Using scan '%s'" % scan )
+            print( "Using mask '%s'" % mask )
+            args = [
+                progs['MakeBag'],
+                '--image', scan,
+                '--mask', mask,
+                '--histogram-spec', files['HistogramSpec'],
+                '--outdir', dirs['Bags'],
+                '--prefix', os.path.basename(scan),
+                '--num-rois', '%d' % params['num-rois'],
+                '--roi-size-x', '%d' % params['roi-size-x'],
+                '--roi-size-y', '%d' % params['roi-size-y'],
+                '--roi-size-z', '%d' % params['roi-size-z'],
+            ] + list(intersperse('--scale', (s for s in params['scales'])))
         
-    for scan, mask in scanMaskList:
-        print( "Using scan '%s'" % scan )
-        print( "Using mask '%s'" % mask )
-        args = [
-            progs['MakeBag'],
-            '--image', scan,
-            '--mask', mask,
-            '--histogram-spec', files['HistogramSpec'],
-            '--outdir', dirs['Bags'],
-            '--prefix', os.path.basename(scan),
-            '--num-rois', '%d' % params['num-rois'],
-            '--roi-size-x', '%d' % params['roi-size-x'],
-            '--roi-size-y', '%d' % params['roi-size-y'],
-            '--roi-size-z', '%d' % params['roi-size-z'],
-        ] + list(intersperse('--scale', (s for s in params['scales'])))
-        
-        print(' '.join(args))        
-        if subprocess.call( args ) != 0:
-            print( 'Error making bag' )
-            return 1
+            print(' '.join(args))        
+            if subprocess.call( args ) != 0:
+                print( 'Error making bag' )
+                return 1
+
+            
+    if skip['Make instance matrices']:
+        print( 'Skipping: Make instance matrices' )
+    else:
+        print( 'Making instance matrices' )
+        bags = [ os.path.join(dirs['Bags'],os.path.basename(scan) + 'bag.txt') for scan,_ in scanMaskList]
+        samples = []
+        for bag in bags:
+            with open(bag) as f:
+                samples += [row for row in csv.reader(f)]
+
+        outpath = files['InstanceMatrixBaseName'] % (params['num-rois'] * len(bags))
+        with open(outpath, 'w') as out:
+            csv.writer( out ).writerows( samples )
 
     
     return 0
