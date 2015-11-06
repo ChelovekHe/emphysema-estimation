@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <numeric>
 
-#include "Eigen/Dense"
 #include "tclap/CmdLine.h"
 
 #include "Hausdorff.h"
@@ -46,10 +45,7 @@ int main(int argc, char *argv[]) {
   //// Commandline parsing is done ////
   
   typedef float ElementType;
-  typedef WeightedEarthMoversDistance< ElementType > DistanceType;
-  typedef Eigen::Matrix< ElementType, Eigen::Dynamic, Eigen::Dynamic >
-    MatrixType;
-  
+  typedef WeightedEarthMoversDistance< ElementType > DistanceType;  
 
   // All histograms have equal weight
   typedef DistanceType::FeatureWeightType FeatureWeightType;
