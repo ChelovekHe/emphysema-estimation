@@ -9,10 +9,14 @@
 
 template< typename MatrixType, typename VectorType >
 struct ClusteringResult {
-  ClusteringResult(MatrixType _centers, VectorType _indices )
-    : centers(_centers), indices(_indices) {}
+  ClusteringResult() : centers(), indices(), distances() {}
+  ClusteringResult(MatrixType _centers,
+		   VectorType _indices,
+		   MatrixType _distances )
+    : centers(_centers), indices(_indices), distances(_distances) {}
   MatrixType centers;
   VectorType indices;
+  MatrixType distances;
 };
 
 
@@ -21,7 +25,7 @@ class KMeansClusterer {
 public:
   typedef TDistanceFunctor DistanceFunctorType;
   typedef typename DistanceFunctorType::ElementType ElementType;
-  typedef Eigen::Matrix<ElementType, Eigen::Dynamic, Eigen::Dynamic> MatrixType;
+  typedef Eigen::Matrix<ElementType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixType;
   typedef std::vector<int> IndexVectorType;
   typedef ClusteringResult< MatrixType, IndexVectorType > ResultType;
   
@@ -34,7 +38,7 @@ public:
   // Cluster instances into at most requestedK clusters using dist to
   // calculate distances. The actual number of clusters depends on the
   // branching factor
-  ResultType cluster( MatrixType& instances,
+  ResultType cluster( const MatrixType& instances,
 		      DistanceFunctorType& dist,
 		      size_t requestedK );
   
