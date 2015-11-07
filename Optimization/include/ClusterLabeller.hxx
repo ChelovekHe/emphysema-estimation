@@ -41,6 +41,10 @@ ClusterLabeller<
   // Setup the problem
   ceres::Problem problem;
   problem.AddResidualBlock( costFunction, NULL, params );
+  for ( std::size_t i = 0; i < x.size(); ++i ) {
+    problem.SetParameterLowerBound( params[0], i, 0);
+    problem.SetParameterUpperBound( params[0], i, 1);
+  }
 
   // Solve the problem
   ceres::Solver::Options options;
