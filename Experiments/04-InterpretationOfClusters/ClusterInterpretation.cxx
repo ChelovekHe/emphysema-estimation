@@ -112,7 +112,6 @@ int main(int argc, char *argv[]) {
   typedef WeightedEarthMoversDistance< ElementType > DistanceType;
   typedef KMeansClusterer< DistanceType > ClustererType;
   typedef typename ClustererType::MatrixType MatrixType;
-  typedef Eigen::Array<ElementType, Eigen::Dynamic, Eigen::Dynamic> ArrayType;
   typedef Eigen::Matrix< ElementType, Eigen::Dynamic, 1 > VectorType;
 
   
@@ -215,10 +214,10 @@ int main(int argc, char *argv[]) {
     MatrixType clusterSizes = clusterLabelCounts.rowwise().sum().rowwise().replicate( clusterLabelCounts.cols() ); 
 
     // Estimate P(Label=label_i) with the frequencies
-    ArrayType p = clusterLabelCounts.array() / clusterSizes.array();
+    MatrixType p = clusterLabelCounts.cwiseQuotient( clusterSizes );
 
     // Calculate entropy for each cluster as the negated sum of of p(x)*log_2(p(x))
-    VectorType entropy = -1 * (p * p.log()).rowwise().sum();
+    VectorType entropy = -1 * (p.array() * p.array().log() ).rowwise().sum();
 
     // Ordering of centers is arbitrary, so we sort according to entropy
     std::sort( entropy.data(), entropy.data() + entropy.rows() );

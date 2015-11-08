@@ -23,7 +23,7 @@ KMeansClusterer< TDistanceFunctor >
 template< typename TDistanceFunctor >
 typename KMeansClusterer< TDistanceFunctor >::ResultType
 KMeansClusterer< TDistanceFunctor >
-::cluster( MatrixType& instances,
+::cluster( const MatrixType& instances,
 	   TDistanceFunctor& dist,
 	   size_t requestedK
 	   ) {
@@ -41,7 +41,7 @@ KMeansClusterer< TDistanceFunctor >
 
   // Setup the data for flann
   InternalMatrixType
-    _instances( instances.data(), instances.rows(), instances.cols());
+    _instances( const_cast<ElementType*>(instances.data()), instances.rows(), instances.cols());
 
   MatrixType centers( k, instances.cols() );
   InternalMatrixType
@@ -57,6 +57,7 @@ KMeansClusterer< TDistanceFunctor >
 
   // We have specifically calculated k so it is feasible
   assert( actualK == k );
+
   
   // Now we build an index on the centers and query with the instances
   //flann::KDTreeIndexParams kdTreeParams( 1 );
@@ -79,8 +80,8 @@ KMeansClusterer< TDistanceFunctor >
 
   // Do the search and return the result
   centersIndex.knnSearch( _instances, _indices, _distances, 1, searchParams );
-
-  return ResultType( centers, indices );
+  
+  return ResultType( centers, indices, distances );
 }
 
 #endif

@@ -82,16 +82,35 @@ TEST_F( EdgesTest, EdgesAreIncreasing ) {
 }
 
 TEST_F( EdgesTest, BinsAreEqualSize ) {
-  std::vector< RealType > edges(49);
+  const std::size_t nBins = 50;
+  std::vector< RealType > edges(nBins-1);
+
+    // If we have duplicate values we cannot be certain that we will get equal
+  // sized bins. And it turns it is rather complicated to figure out what sizes
+  // we should get.
+  // So we just make sure that samples are unique before finding the edges.
+  auto last = std::unique( samples.begin(), samples.end() );
+  samples.erase(last, samples.end() );
+
+  // We want the number of samples to be a multiple of the number of bins
+  // so we need to erase extra samples so that is the case.
+  if ( samples.size() % nBins != 0 ) {
+    samples.resize( samples.size() - samples.size() % nBins );
+  }
+
+  ASSERT_EQ( 0, samples.size() % nBins );
+  
   determineEdgesForEqualizedHistogram(samples.begin(),
 				      samples.end(),
 				      edges.begin(),
-				      edges.size() + 1);
-  size_t binSize = samples.size() / (edges.size() + 1);
-  size_t n = 0;
+				      nBins);
+  
+  size_t binSize = samples.size() / nBins;
+  size_t n = 0;  
   for ( size_t i = 0, j = 0; i < samples.size(); ++i, ++n ) {
     if ( j < edges.size() && samples[i] >= edges[j] ) {
-      EXPECT_EQ( binSize, n );
+      // Changed to a new bin
+      EXPECT_EQ( n, binSize );
       n = 0;
       ++j;
     }

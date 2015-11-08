@@ -339,7 +339,8 @@ int main(int argc, char *argv[]) {
   // Each column is a bin in one of the histograms
   typedef Eigen::Matrix< PixelType,
 			 Eigen::Dynamic,
-			 Eigen::Dynamic> MatrixType;
+			 Eigen::Dynamic,
+			 Eigen::RowMajor> MatrixType;
   MatrixType bag( rois.size(), totalBins );
 
   // Now we can run the pipeline

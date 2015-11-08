@@ -66,8 +66,10 @@ int main(int argc, char *argv[]) {
   
   typedef float ElementType;
   typedef WeightedEarthMoversDistance< ElementType > DistanceType;
-  typedef Eigen::Matrix< ElementType, Eigen::Dynamic, Eigen::Dynamic >
-    MatrixType;
+  typedef Eigen::Matrix< ElementType,
+			 Eigen::Dynamic,
+			 Eigen::Dynamic,
+			 Eigen::RowMajor > MatrixType;
   
   const std::vector<size_t> numberOfClusters{2, 4, 8, 16, 32, 64 };
   const size_t numberOfIterations = 100;

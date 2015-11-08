@@ -19,6 +19,15 @@ TCLAP_ARCHIVE = ${TCLAP_SRC_DIR}.tar.gz
 EIGEN_SRC_DIR = eigen-eigen-c58038c56923
 EIGEN_ARCHIVE = ${EIGEN_SRC_DIR}.tar.bz2
 
+GLOG_SRC_DIR = glog-0.3.4
+GLOG_ARCHIVE = ${GLOG_SRC_DIR}.tar.gz
+
+
+CERES_SRC_DIR = ceres-solver-1.11.0
+CERES_ARCHIVE = ${CERES_SRC_DIR}.tar.gz
+CERES_BUILD_DIR = CERES-build
+CERES_CMAKE_FLAGS = -DEIGEN_INCLUDE_DIR=../eigen-eigen-c58038c56923
+
 ITK_SRC_DIR = InsightToolkit-4.8.0
 ITK_ARCHIVE = ${ITK_SRC_DIR}.tar.gz
 ITK_BUILD_DIR = ITK-build
@@ -32,13 +41,26 @@ GTEST_ARCHIVE = ${GTEST_SRC_DIR}.tar.gz
 GTEST_BUILD_DIR = GTEST-build
 
 
-all: tclap itk flann
+all: tclap itk flann eigen ceres
 
 tclap: ${TCLAP_ARCHIVE}
 	${TAR} ${TAR_GUNZIP_FLAGS} $^ 
 
+
 eigen: ${EIGEN_ARCHIVE}
 	${TAR} ${TAR_BUNZIP_FLAGS} $^
+
+glog-src : ${GLOG_ARCHIVE}
+	${TAR} ${TAR_GUNZIP_FLAGS} $^ 
+
+ceres-src: ${CERES_ARCHIVE}
+	${TAR} ${TAR_GUNZIP_FLAGS} $^ 
+
+ceres: ceres-src
+	mkdir -p ${CERES_BUILD_DIR}
+	cd ${CERES_BUILD_DIR};\
+	${CMAKE} ${CMAKE_FLAGS} ${CERES_CMAKE_FLAGS} ../${CERES_SRC_DIR}
+	${MAKE} -C ${CERES_BUILD_DIR}
 
 
 itk-src: ${ITK_ARCHIVE}

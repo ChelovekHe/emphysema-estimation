@@ -5,8 +5,6 @@
 #include <array>
 #include <fstream>
 
-#include "Eigen/Dense"
-
 #include "tclap/CmdLine.h"
 
 #include "WeightedEarthMoversDistance.h"
