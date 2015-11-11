@@ -14,6 +14,11 @@ include( ${ITK_USE_FILE} )
 find_package( Ceres REQUIRED PATHS "External/CERES-build" )
 include_directories( ${CERES_INCLUDE_DIRS} )
 
+
+# Set variable for libcmaes
+set( CMAES_LIBRARIES ${CMAKE_SOURCE_DIR}/External/lib/libcmaes.so.0 )
+include_directories( External/include )
+
 enable_testing( )
 
 include_directories( Classification/include )

@@ -26,6 +26,16 @@ struct WeightedEarthMoversDistance {
 
   WeightedEarthMoversDistance( std::vector<FeatureWeightType> weights )
     : m_Weights( weights ) {}
+
+  void setWeights( const ResultType* weights, const int N ) {
+    if (N < 0 || static_cast<std::size_t>(N) != m_Weights.size() ) {
+      throw std::invalid_argument( "weights size mismatch" );
+    }
+    for ( std::size_t i = 0; i < m_Weights.size(); ++i ) {
+      m_Weights[i].second = *weights++;
+    }
+  }
+  
   
   template< typename ForwardIter1, typename ForwardIter2 >
   ResultType operator()( ForwardIter1 a, ForwardIter2 b, size_t size,
