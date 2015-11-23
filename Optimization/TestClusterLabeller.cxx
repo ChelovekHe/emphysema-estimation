@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <cmath>
+
 #include "ClusterLabeller.h"
 #include "Eigen/Dense"
 
@@ -23,6 +25,14 @@ int main() {
   LabellerType labeller(p);
   
   labeller.findOptimalLabels(C, x);
+
+  std::cout << "Result " << std::endl
+	    << x << std::endl << std::endl
+	    << p << std::endl << std::endl
+	    << C*x << std::endl;
+
+  
+  labeller.findOptimalLabels(C, x, std::sqrt( 5.0 ));
 
   std::cout << "Result " << std::endl
 	    << x << std::endl << std::endl

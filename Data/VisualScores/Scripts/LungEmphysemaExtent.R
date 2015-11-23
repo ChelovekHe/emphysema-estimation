@@ -27,6 +27,8 @@ LungEmphysemaExtent <- function(path, StIds=NULL) {
     ## If we are given a set of study ids, then we only use those studies
     if ( !is.null(StIds) ) {
         scores <- subset(scores, StId %in% StIds );
+        ## We might not get all the studies we want, so we print those we use
+        print( subset( data.frame(list(id=StIds)), !id %in% scores$StId )[[1]] )
     }
     
     ## There are are scores for the first and the last scan for each participant
@@ -73,7 +75,7 @@ LungEmphysemaExtent <- function(path, StIds=NULL) {
     regionExtent[ regionExtent == 6 ] = 88;
 
     ## We want to combine the region extents into a lung extent
-    lungExtent <- rowMeans( regionExtent );
+    lungExtent <- rowMeans( regionExtent ) / 100;
     
     list(StudyId=scores$StId,
          Date=scores$Dato.1,

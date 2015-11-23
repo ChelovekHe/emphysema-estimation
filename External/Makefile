@@ -4,6 +4,8 @@
 #  make itk
 # will unpack ITK archive and launch ccmake in a build directory. This requires
 # manual intervention to continue.
+EXTERNAL_DIR = /home/silas/emphysema-estimation/External
+
 CMAKE = ccmake
 CMAKE_FLAGS = -DCMAKE_CXX_FLAGS=-std=c++11
 
@@ -22,11 +24,21 @@ EIGEN_ARCHIVE = ${EIGEN_SRC_DIR}.tar.bz2
 GLOG_SRC_DIR = glog-0.3.4
 GLOG_ARCHIVE = ${GLOG_SRC_DIR}.tar.gz
 
+CMAES_SRC_DIR = libcmaes-0.9.5
+CMAES_ARCHIVE = ${CMAES_SRC_DIR}.tar.gz
+CMAES_CONFIGURE_FLAGS = --prefix=${EXTERNAL_DIR}\
+			--with-eigen3-include=${EXTERNAL_DIR}/${EIGEN_SRC_DIR}
 
 CERES_SRC_DIR = ceres-solver-1.11.0
 CERES_ARCHIVE = ${CERES_SRC_DIR}.tar.gz
 CERES_BUILD_DIR = CERES-build
-CERES_CMAKE_FLAGS = -DEIGEN_INCLUDE_DIR=../eigen-eigen-c58038c56923
+CERES_CMAKE_FLAGS = -DEIGEN_INCLUDE_DIR=../eigen-eigen-c58038c56923\
+		    -DGLOG_INCLUDE_DIR=../include\
+		    -DGLOG_LIBRARY=../lib/libglog.a\
+		    -DCMAKE_BUILD_TYPE=Release\
+		    -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}\
+		    -DCXX11=ON
+
 
 ITK_SRC_DIR = InsightToolkit-4.8.0
 ITK_ARCHIVE = ${ITK_SRC_DIR}.tar.gz
@@ -51,7 +63,23 @@ eigen: ${EIGEN_ARCHIVE}
 	${TAR} ${TAR_BUNZIP_FLAGS} $^
 
 glog-src : ${GLOG_ARCHIVE}
-	${TAR} ${TAR_GUNZIP_FLAGS} $^ 
+	${TAR} ${TAR_GUNZIP_FLAGS} $^
+
+glog: glog-src
+	cd ${GLOG_SRC_DIR};\
+	./configure --prefix=${EXTERNAL_DIR} &&\
+	make -j4 &&\
+	make install
+
+cmaes-src : ${CMAES_ARCHIVE}
+	${TAR} ${TAR_GUNZIP_FLAGS} $^
+
+cmaes: cmaes-src
+	cd ${CMAES_SRC_DIR};\
+	./autogen.sh &&\
+	./configure ${CMAES_CONFIGURE_FLAGS}&&\
+	make -j4 &&\
+	make install
 
 ceres-src: ${CERES_ARCHIVE}
 	${TAR} ${TAR_GUNZIP_FLAGS} $^ 
@@ -61,6 +89,7 @@ ceres: ceres-src
 	cd ${CERES_BUILD_DIR};\
 	${CMAKE} ${CMAKE_FLAGS} ${CERES_CMAKE_FLAGS} ../${CERES_SRC_DIR}
 	${MAKE} -C ${CERES_BUILD_DIR}
+	${MAKE} -C ${CERES_BUILD_DIR} install
 
 
 itk-src: ${ITK_ARCHIVE}

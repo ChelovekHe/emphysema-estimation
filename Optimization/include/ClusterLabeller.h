@@ -23,7 +23,7 @@
   r_{N+1}(x) is the sum of signed errors over all bags. 
              The purpose of this term is to make the labelling respect the
 	     population label proportions.
-  \lambda    is a regularization parameter that determines that determines the
+  \lambda    is a regularization parameter that determines the
              weighting of local/population error. If set to N, it will weigh the
 	     terms equally.
 
@@ -53,11 +53,11 @@ public:
     @return   Objective value as optimal x
    */
   double
-  findOptimalLabels( const MatrixType& C, VectorType& x ) const;
+  findOptimalLabels( const MatrixType& C, VectorType& x, double lambda=1.0 ) const;
 
 
 private:
-  const VectorType m_P;  
+  const VectorType m_P;
 };
 
 #include "ClusterLabeller.hxx"
