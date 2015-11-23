@@ -92,6 +92,14 @@ int main(int argc, char *argv[]) {
 	      "path", 
 	      cmd);
 
+    TCLAP::ValueArg<int> 
+    maxItersArg("m", 
+		"max-iters", 
+		"Maximum iterations of CMA-ES. Set to <= 0 to let CMA-ES decide.",
+		false,
+		0,
+		"it", 
+		cmd);
   
   try {
     cmd.parse(argc, argv);
@@ -110,6 +118,7 @@ int main(int argc, char *argv[]) {
   const int branching{ branchingArg.getValue() };
   const size_t k{ kArg.getValue() };
   const std::string outputPath{ outputArg.getValue() };
+  const int maxIters{ maxItersArg.getValue() };
   
   //// Commandline parsing is done ////
 
@@ -255,31 +264,46 @@ int main(int argc, char *argv[]) {
   const double sigma = -1; // Automatically set
   const uint64_t seed = 0; // Automatically set
   CMAParameters cmaParams(dim, &x0.front(), sigma, lambda, seed, gp); 
-  cmaParams.set_algo( aCMAES );
+  cmaParams.set_algo( aBIPOP_CMAES ); // Using BIPOP restart strategy
+  //cmaParams.set_algo( aCMAES );
+
+  // We want trace of execution we can visualize after
+  cmaParams.set_fplot(outputPath);
+
+  // We want a progress function that prints some info
+  libcmaes::ProgressFunc<
+    CMAParameters,
+    CMASolutions > select_time = [](const CMAParameters &cmaparams,
+				    const CMASolutions &cmasols) {
+    if (cmasols.niter() % 100 == 0)
+      std::cerr << cmasols.elapsed_last_iter() << std::endl;
+    return 0;
+  };
+
+  if ( maxIters > 0 ) {
+  // We want to stop after a reasonable number of iterations
+    cmaParams.set_max_iter( maxIters );
+  }
   
   // Optimize
   std::cout << "Running CMA-ES optimization" << std::endl;
   CMASolutions cmaSols =
-    libcmaes::cmaes< GenoPheno >(llp_wrapper, cmaParams);
+    libcmaes::cmaes< GenoPheno >(llp_wrapper, cmaParams, select_time);
 
   std::cout << "best solution: " << cmaSols << std::endl;
   std::cout << "optimization took " << cmaSols.elapsed_time() / 1000.0 << " seconds\n";
 
   cmaSols.print(std::cout, 0, gp);
 
-  std::cout << std::endl << "x0 = ";
-  for ( const auto& xi : x0 ) {
-    std::cout << xi << " ";
-  }
   auto x = gp.pheno(cmaSols.best_candidate().get_x_dvec());
-  std::cout << std::endl << x << std::endl;
-  llp(x.data(), 2);
+  llp(x.data(), nHistograms);
   
   auto result = llp.getResult();
   std::cout << "Result from last call to llp" << std::endl
 	    << "C: " << std::endl << result.C << std::endl
 	    << "labels: " << std::endl << result.labels << std::endl
-	    << "error: " << std::endl << result.error << std::endl;
+	    << "error: " << std::endl << result.error << std::endl
+	    << "status: " << std::endl << cmaSols.run_status() << std::endl;
     
   return cmaSols.run_status();
 }
