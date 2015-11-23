@@ -6,6 +6,7 @@ set( LIBS
 
 set( progs
   TestClusterLabeller
+  LLPCostFunctionTest
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
