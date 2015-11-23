@@ -1,6 +1,8 @@
 #ifndef __LLP2_hxx
 #define __LLP2_hxx
 
+#include <cmath>
+
 #include "LLP2.h"
 
 LLP2
@@ -18,7 +20,8 @@ LLP2
     m_NumberOfBags( p.size() ),
     m_K( k ),
     m_Result( ),
-    m_Dist( std::vector< std::pair< unsigned int, double > >( nHistograms, {nBins, 1} ))
+    m_Dist( std::vector< std::pair< unsigned int, double > >( nHistograms, {nBins, 1} )),
+    m_Lambda( std::sqrt( static_cast<double>( p.size() )))
 {
   
   // We must have that bagIndices can be used to index into p
@@ -36,6 +39,8 @@ LLP2
   if ( instances.cols() != nHistograms*nBins ) {
     throw std::invalid_argument( "instances.cols() != nHistograms*nBins" );
   }
+
+  
 }
 
 double
@@ -61,7 +66,8 @@ LLP2
   // Find labels 
   m_Result.labels = VectorType::Zero( k );
   m_Result.error = m_Labeller.findOptimalLabels( m_Result.C,
-						 m_Result.labels );
+						 m_Result.labels,
+						 m_Lambda );
 
   return m_Result.error;
 }

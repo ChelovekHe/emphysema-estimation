@@ -72,6 +72,7 @@ private:
   unsigned int m_K;
   ResultType m_Result;
   DistanceFunctorType m_Dist;
+  double m_Lambda;
 };
 
 #include "LLP2.hxx"

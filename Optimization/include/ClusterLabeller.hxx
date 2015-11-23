@@ -20,7 +20,7 @@ ClusterLabeller<
   Eigen::Matrix< double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor >,
   Eigen::Matrix< double, Eigen::Dynamic, 1 >
   >
-::findOptimalLabels( const MatrixType& C, VectorType& x ) const {
+::findOptimalLabels( const MatrixType& C, VectorType& x, double lambda ) const {
   // Check that size match
   if ( C.cols() != x.size() ) {
     throw std::invalid_argument("Size of C and x must match");
@@ -32,7 +32,7 @@ ClusterLabeller<
 
   VectorType initialX = x;
   typedef LLPCostFunction<VectorType, MatrixType> CostFunctionType;
-  CostFunctionType* costFunction = new CostFunctionType(m_P, C);
+  CostFunctionType* costFunction = new CostFunctionType(m_P, C, std::sqrt(lambda));
 
   // Create the parameter group
   std::vector< double* > params;
