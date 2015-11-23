@@ -10,8 +10,7 @@ set( CMAKE_PREFIX_PATH "External/ITK-build" )
 find_package( ITK REQUIRED )
 include( ${ITK_USE_FILE} )
 
-#set( CMAKE_PREFIX_PATH "External/CERES-build" )
-find_package( Ceres REQUIRED PATHS "External/CERES-build" )
+find_package( Ceres REQUIRED PATHS "External/" )
 include_directories( ${CERES_INCLUDE_DIRS} )
 
 
