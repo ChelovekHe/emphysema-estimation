@@ -11,6 +11,7 @@ set( LIBS
 
 set( progs 
   LLP
+  LLP2
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
