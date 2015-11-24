@@ -14,11 +14,13 @@ struct ClusterModelTrainerParameters {
     @param seed    	 Seed for random generator
   */
   ClusterModelTrainerParameters( const std::size_t k,
+				 const int& branching,
 				 const int& maxIterations = 0,
 				 const double& sigma = -1,
 				 const int& lambda = -1,
 				 const uint64_t seed = 0 )
     : k( k ),
+      branching( branching ),
       maxIterations( maxIterations ),
       sigma( sigma ),
       lambda( lambda ),
@@ -26,6 +28,7 @@ struct ClusterModelTrainerParameters {
   {}
 
   const std::size_t k;
+  const int& branching;
   const int& maxIterations;
   const double& sigma;
   const int& lambda;

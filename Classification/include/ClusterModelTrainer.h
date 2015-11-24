@@ -187,6 +187,7 @@ ClusterModelTrainer< TClusterer, TLabeller >
 	 const ClusterModelTrainerParameters& params )
 {
   m_K = params.k;
+  this->setBranching( params.branching );
   VectorType weights( m_FeatureSpaceDimension );
   
   // We want to find a weighting of the feature space, such that the

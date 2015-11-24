@@ -250,8 +250,9 @@ int main(int argc, char *argv[]) {
 
   // This guy should include more clustering specific parameters
   ClusterModelTrainerParameters trainerParams(
-    k,   // Use k classes
-    100 // Maximum number of iterations
+    k,         // Number of clusters
+    branching, // Branching factor for hierarchical kmeans
+    100        // Maximum number of iterations of CMA-ES
   );
 
   const auto featureSpaceDimension = nHistograms;
