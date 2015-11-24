@@ -22,8 +22,11 @@ public:
   typedef typename TClusterer::MatrixType MatrixType;
   typedef typename TClusterer::VectorType VectorType;
   typedef typename TClusterer::DistanceFunctorType DistanceFunctorType;
-  typedef ClusterModel< DistanceFunctorType > ClusterModelType;
+  typedef ClusterModel< DistanceFunctorType > ModelType;
 
+  typedef ClusterModelTrainerParameters ParamsType;
+  typedef double LossResultType;
+  
   using TClusterer::cluster;
   using TLabeller::label;
 
@@ -33,9 +36,41 @@ public:
   struct Trace {
     std::vector< ClusteringType > clusterings;
     std::vector< VectorType > labellings;
-    std::vector< double > errors;
+    std::vector< LossResultType > losses;
   };
 
+  /*
+    Constructor
+
+    @param data   Matrix containing the instances in each row. 
+    The next to last column is assumed to be the bag proportions.
+    The last column is assumed to be the bag membership labels.
+
+    @param featureSpaceDimension  Number of "top-level" features. If the 
+    feature space is a set of objects, each represented  by a vector, 
+    then the size of each vector is instances.size()/featureSpaceDimension
+
+    @param trace       Flag controlling if a trace of the execution should
+                       be stored.
+   */
+  ClusterModelTrainer( const MatrixType& data,
+		       const unsigned int& featureSpaceDimension,
+		       bool trace=false )
+    :
+    m_Instances( data.leftCols( data.cols() - 2 ) ),
+    m_P( data.col( data.cols() - 2 ) ),
+    m_FeatureSpaceDimension( featureSpaceDimension ),
+    m_BagIndices( data.rows() ),
+    m_TraceEnabled( trace ),
+    m_Trace( ),
+    m_K( 0 )
+  {
+    VectorType bagIndices = data.col( data.cols() - 1 );
+    for ( std::size_t i = 0; i < bagIndices.size(); ++i ) {
+      m_BagIndices[i] = static_cast<int>( bagIndices(i) );
+    }    
+  }
+  
   /*
     Constructor
 
@@ -79,10 +114,10 @@ public:
     @param cm      The cluster model to train  [OUT]
     @param params  Parameters for the training [IN]
 
-    @return  Status of training 
+    @return  Training loss
    */
-  int
-  train( ClusterModelType& cm,
+  double
+  train( ModelType& cm,
 	 const ClusterModelTrainerParameters& params);
   
 private:
@@ -133,22 +168,22 @@ ClusterModelTrainer< TClusterer, TLabeller >
   
   // Find labels 
   VectorType labels = VectorType::Zero( k );
-  double error = label( m_P, C, labels );
+  double loss = label( m_P, C, labels );
 
   if ( m_TraceEnabled ) {
     m_Trace.clusterings.push_back( clustering );
     m_Trace.labellings.push_back( labels );
-    m_Trace.errors.push_back( error );
+    m_Trace.losses.push_back( loss );
   }
   
-  return error;
+  return loss;
 
 }
 
 template< typename TClusterer, typename TLabeller >
-int 
+double 
 ClusterModelTrainer< TClusterer, TLabeller >
-::train( ClusterModelType& cm,
+::train( ModelType& cm,
 	 const ClusterModelTrainerParameters& params )
 {
   m_K = params.k;
@@ -182,6 +217,12 @@ ClusterModelTrainer< TClusterer, TLabeller >
   CMASolutions solutions = libcmaes::cmaes< GenoPheno >( objective,
 							 cmaParams );
 
+  // TODO: Handle the diferent ways that CMAES can terminate
+  if ( solutions.run_status() < 0 ) {
+    std::cerr << "Error occured while training model." << std::endl
+	      << "CMA-ES error code: " << solutions.run_status() << std::endl;
+    return std::numeric_limits<double>::infinity();
+  }
   
   // Now we use the weights we found in the optimization to train a model
   DistanceFunctorType dist( weights.data(), weights.size() );
@@ -197,7 +238,7 @@ ClusterModelTrainer< TClusterer, TLabeller >
   
   // Find labels 
   VectorType labels = VectorType::Zero( m_K );
-  double error = label( m_P, C, labels );
+  double loss = label( m_P, C, labels );
 
   cm.setCenters( clustering.centers );
   cm.setLabels( labels );
@@ -205,7 +246,7 @@ ClusterModelTrainer< TClusterer, TLabeller >
 
   cm.build();
   
-  return solutions.run_status();
+  return loss;
 }
   
 #endif

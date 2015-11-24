@@ -14,7 +14,14 @@ namespace ee_llp {
 			 Eigen::Dynamic,
 			 1 > DoubleColumnVectorType;
 
+  typedef Eigen::Matrix< double,
+			 1,
+			 Eigen::Dynamic > DoubleRowVectorType;
 
+  typedef Eigen::PermutationMatrix<
+    Eigen::Dynamic,
+    Eigen::Dynamic > PermutationMatrixType;
+  
 }
 
 #endif

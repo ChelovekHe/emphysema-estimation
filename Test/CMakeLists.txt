@@ -12,12 +12,13 @@ set( LIBS
   )
 
 set( progs
+  ClusterLabellerTest
+  CrossValidatorTest
   DenseHistogramTest
+  DetermineEdgesForEqualizedHistogramTest
   EigenvaluesTest
   HausdorffTest
   WeightedEarthMoversDistanceTest
-  DetermineEdgesForEqualizedHistogramTest
-  ClusterLabellerTest
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )

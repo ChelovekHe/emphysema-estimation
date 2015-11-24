@@ -14,6 +14,8 @@
 template< typename TDistanceFunctor >
 class ClusterModel {
 public:
+  typedef ClusterModel< TDistanceFunctor > Self;
+  
   typedef ee_llp::DoubleRowMajorMatrixType MatrixType;
   typedef ee_llp::DoubleColumnVectorType VectorType;
   typedef std::vector< int > IndexVectorType;
@@ -26,6 +28,14 @@ public:
       m_Weights(  ),
       m_Index( ),
       m_InternalCenters( )
+  {}
+
+  ClusterModel( Self&& other )
+    : m_Centers( std::move(other.m_Centers) ),
+      m_Labels( std::move(other.m_Labels) ),
+      m_Weights( std::move(other.m_Weights) ),
+      m_Index( std::move(other.m_Index) ),
+      m_InternalCenters( std::move(other.m_InternalCenters) )
   {}
   
   ClusterModel( const MatrixType& centers,
@@ -53,6 +63,7 @@ public:
   const VectorType& weights() const { return m_Weights;  }
   
   void build() {
+    // This is so ugly
     m_InternalCenters =
       std::move(
 		std::unique_ptr<InternalMatrixType>(
@@ -91,7 +102,7 @@ public:
 		  instances.rows(),
 		  instances.cols() );
 
-    m_Index.knnSearch( _instances, _indices, _distances, 1, searchParams );
+    m_Index->knnSearch( _instances, _indices, _distances, 1, searchParams );
     VectorType predictions( indices.size() );
     for ( std::size_t i = 0; i < predictions.size(); ++i ) {
       predictions(i) = m_Labels( indices[i] );
