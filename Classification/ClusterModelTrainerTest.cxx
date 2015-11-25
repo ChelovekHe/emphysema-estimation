@@ -6,7 +6,7 @@
 #include "ContinousClusterLabeller.h"
 #include "ExhaustiveBinaryClusterLabeller.h"
 #include "GreedyBinaryClusterLabeller.h"
-#include "ClusterModelTrainer.h"
+#include "ClusterModelTrainer3.h"
 #include "WeightedEarthMoversDistance2.h"
 
 
@@ -15,8 +15,8 @@ int main() {
   typedef KMeansClusterer2< DistanceFunctorType > ClustererType;
   typedef ContinousClusterLabeller< LLPCostFunction > LabellerType;
 
-  typedef ClusterModelTrainer< ClustererType,
-			       LabellerType > TrainerType;
+  typedef ClusterModelTrainer3< ClustererType,
+				LabellerType > TrainerType;
   
 
   std::cout << "Types defined" << std::endl;

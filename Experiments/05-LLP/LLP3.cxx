@@ -17,11 +17,11 @@
 #include "ContinousClusterLabeller.h"
 
 #include "ClusterModel.h"
-#include "ClusterModelTrainer2.h"
+#include "ClusterModelTrainer3.h"
 #include "ClusterModelTrainerParameters.h"
-#include "ClusterModelTester.h"
+#include "ClusterModelTester2.h"
 
-#include "CrossValidator.h"
+#include "LLPCrossValidator.h"
 
 #include "WeightedEarthMoversDistance2.h"
 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
   typedef KMeansClusterer2< DistanceFunctorType > ClustererType;
   typedef ContinousClusterLabeller< LLPCostFunction > LabellerType;
 
-  typedef ClusterModelTrainer2< ClustererType, LabellerType > TrainerType;
+  typedef ClusterModelTrainer3< ClustererType, LabellerType > TrainerType;
   typedef typename TrainerType::ModelType ModelType;  
   typedef typename ModelType::MatrixType MatrixType;
   typedef typename ModelType::VectorType VectorType;
@@ -229,19 +229,10 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-
-  // const auto M = instances.rows();
-  // const auto N = instances.cols();
-  // MatrixType trainData( M, N + 2);
-  // trainData.block(0, 0, M, N) = instances;
-  // trainData.col(N) = bagProportions;
-  // for ( std::size_t i = 0; i < M; ++i ) {
-  //   trainData(i, N+1) = bagLabels[i];
-  // }
   
-  const unsigned int nFolds = 10;
   // We want to use cross validation to estimate the performance
-  typedef CrossValidator< TrainerType, TesterType > ValidatorType;
+  typedef LLPCrossValidator< TrainerType, TesterType > ValidatorType;
+  const unsigned int nFolds = 10;
   CrossValidationParams cvParams(
     CrossValidationType::K_FOLD,
     nFolds, // how many folds to use
@@ -250,43 +241,36 @@ int main(int argc, char *argv[]) {
 
   // This guy should include more clustering specific parameters
   ClusterModelTrainerParameters trainerParams(
-    k,          // Number of clusters
-    branching,  // Branching factor for hierarchical kmeans
-    maxIters,   // Maximum number of iterations of CMA-ES
-    outputPath
+    nHistograms, // Feature space dimension
+    k,           // Number of clusters
+    maxIters,    // Maximum number of iterations of CMA-ES
+    outputPath,  // Path to trace file for CMA-ES
+    -1,          // Sigma for CMA-ES
+    -1,          // Lambda for CMA-ES
+    0,           // Random seed for CMA-ES
+    false        // Toggle trace for trainer
   );
 
-  const auto featureSpaceDimension = nHistograms;
-
-  TrainerType trainer( bagProportions, instances, featureSpaceDimension, bagLabels );
-  ModelType m;
-  auto trainError = trainer.train( m, trainerParams );
-
-  std::cout << "Training error " << trainError << std::endl;
+  ClustererType clusterer( branching );
+  LabellerType labeller;
+  TrainerType trainer( clusterer, labeller, trainerParams );
+  TesterType tester;
   
-  // ValidatorType validator;
-
-  // auto cvResult = validator.run(
-  //   trainData,
-  //   featureSpaceDimension,
-  //   trainerParams,
-  //   cvParams
-  // );
-
-  // std::string hl =
-  //   "------------------------------------------------------------";
-  // for ( std::size_t i = 0; i < nFolds; ++ i ) {
-  //   std::cout
-  //     << hl << std::endl
-  //     << "Fold " << i << std::endl
-  //     << hl << std::endl
-  //     << "Train loss" << std::endl
-  //     << cvResult.trainingLosses[i] << std::endl
-  //     << hl << std::endl
-  //     << "Test loss" << std::endl
-  //     << cvResult.testLosses[i] << std::endl
-  //     << hl << std::endl;
-  // }
-
+  ValidatorType validator;
+  auto result = validator.run( bagProportions,
+			       instances,
+			       bagLabels,
+			       trainer,
+			       tester,
+			       cvParams );
+  
+  // Store the results
+  std::ofstream out( "LLP3.result" );
+  out << "trainLoss, testLoss" << std::endl; 
+  for ( std::size_t i = 0; i < result.trainingLosses.size(); ++i ) {
+    out << result.trainingLosses[i] << ", "
+	<< result.testLosses[i] << std::endl;
+  }
+  
   return 0;
 }
