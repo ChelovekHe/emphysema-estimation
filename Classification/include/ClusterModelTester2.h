@@ -50,8 +50,7 @@ public:
 
     // Calculate loss
     LossFunctorType lossFunction( p );
-    return lossFunction( bagPrediction ) /
-      static_cast< LossResultType >( p.size() );
+    return lossFunction( bagPrediction );
   }
 
 private:

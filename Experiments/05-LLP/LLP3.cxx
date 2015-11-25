@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
   CrossValidationParams cvParams(
     CrossValidationType::K_FOLD,
     nFolds, // how many folds to use
-    true    // Shuffle instances before partitioning in folds
+    false    // Shuffle instances before partitioning in folds
   );
 
   // This guy should include more clustering specific parameters
@@ -255,21 +255,36 @@ int main(int argc, char *argv[]) {
   LabellerType labeller;
   TrainerType trainer( clusterer, labeller, trainerParams );
   TesterType tester;
+
+  // typename TrainerType::ModelType model;
+  // auto trainLoss = trainer.train( bagProportions, 
+  // 				  instances,
+  // 				  bagLabels,
+  // 				  model );
+  // auto testLoss =  tester.test(  bagProportions, 
+  // 				 instances,
+  // 				 bagLabels,
+  // 				 model );
+
+  // trainLoss /= bagProportions.size();
+  // testLoss  /= bagProportions.size();
   
+  // std::cout << "TrainLoss = " << trainLoss << std::endl
+  // 	    << "TestLoss  = " << testLoss << std::endl;
   ValidatorType validator;
   auto result = validator.run( bagProportions,
-			       instances,
-			       bagLabels,
-			       trainer,
-			       tester,
-			       cvParams );
+  			       instances,
+  			       bagLabels,
+  			       trainer,
+  			       tester,
+  			       cvParams );
   
   // Store the results
   std::ofstream out( "LLP3.result" );
   out << "trainLoss, testLoss" << std::endl; 
   for ( std::size_t i = 0; i < result.trainingLosses.size(); ++i ) {
     out << result.trainingLosses[i] << ", "
-	<< result.testLosses[i] << std::endl;
+  	<< result.testLosses[i] << std::endl;
   }
   
   return 0;

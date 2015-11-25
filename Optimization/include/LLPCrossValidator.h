@@ -141,10 +141,13 @@ private:
   {
     LLPData D;
 
+    std::unordered_map<int, std::size_t > I;
+    
     // Find the bag proportions we need
     D.p = VectorType( indices.size() );
     for ( std::size_t i = 0; i < indices.size(); ++i ) {
-      D.p(i) = p(indices[i]);
+      D.p(i) = p( indices[i] );
+      I[indices[i]] = i;
     }
       
     
@@ -161,8 +164,12 @@ private:
     for ( std::size_t i = 0; i < instanceIndices.size(); ++i ) {
       auto idx = instanceIndices[i];
       D.instances.row(i) = instances.row(idx);
-      D.bagLabels[i] = bagLabels[idx];
+      D.bagLabels[i] = I[bagLabels[idx]];
     }
+
+    // We need to relabel the bags such that indices can be used to index p
+    
+    
     return D;
   }
 };
@@ -216,6 +223,25 @@ LLPCrossValidator<TBagTrainer, TBagTester>
 
     auto trainData = pick( p, instances, bagLabels, split.train );
     auto testData = pick( p, instances, bagLabels, split.test );
+
+    // std::cout << trainData.p.size() << std::endl
+    //   	      << trainData.instances.rows() << ", " << trainData.instances.cols()  << std::endl
+    // 	      << trainData.bagLabels.size() << std::endl;
+
+    // std::cout << trainData.p << std::endl;
+
+    // int oldlabel = -1;
+    // for ( auto label : trainData.bagLabels ) {
+    //   if ( label > oldlabel ) {
+    // 	std::cout << label << std::endl;
+    // 	oldlabel = label;
+    //   }
+    // }
+
+    // std::cout << trainData.instances.row(0) << std::endl << std::endl
+    // 	      << trainData.instances.row( trainData.instances.rows() - 1 ) << std::endl << std::endl;
+
+    // return result;
     
     result.trainingLosses.push_back(
       trainer.train( trainData.p,
