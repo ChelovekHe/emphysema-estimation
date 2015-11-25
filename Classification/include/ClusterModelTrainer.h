@@ -107,7 +107,6 @@ public:
   std::size_t getMaxIterations();
   void setMaxIterations(int maxIterations);
   
-  
   /*
     Train a cluster model.
 
@@ -208,6 +207,10 @@ ClusterModelTrainer< TClusterer, TLabeller >
     cmaParams.set_max_iter( params.maxIterations );
   }
 
+  if ( !params.out.empty() ) {
+    cmaParams.set_fplot( params.out );
+  }
+  
   // Wrap the objective for cmaes
   using std::placeholders::_1;
   using std::placeholders::_2;
