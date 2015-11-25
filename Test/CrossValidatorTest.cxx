@@ -33,7 +33,7 @@ public:
 
   LossResultType
   loss( const MatrixType& m ) const {
-    predict( m ).sum();
+    return predict( m ).sum();
   }
   
   MatrixType m_V;
