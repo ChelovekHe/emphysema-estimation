@@ -8,14 +8,12 @@
 #include "Types.h"
 #include "CrossValidationParams.h"
 
-template< typename TBagTrainer,
-	  typename TBagTester >
+template< typename TBagTrainer >
 class LLPCrossValidator {
 public:
-  typedef LLPCrossValidator< TBagTrainer, TBagTester > Self;
+  typedef LLPCrossValidator< TBagTrainer > Self;
 
   typedef TBagTrainer TrainerType;
-  typedef TBagTester TesterType;
   typedef typename TrainerType::ModelType ModelType;
 
   typedef CrossValidationParams ParamsType;
@@ -25,9 +23,8 @@ public:
   typedef typename ModelType::IndexVectorType IndexVectorType;
   
   struct ResultType {
-    std::vector< ModelType > models;
+    VectorType predictions;
     std::vector< double > trainingLosses;
-    std::vector< double > testLosses;
   };
 
 
@@ -40,6 +37,8 @@ public:
 
      @param bagLabels  Label indicating which bag an instance belong to.
 
+     @param trainer  Object that can train an LLP model
+
      @return  A struct holding the training and test loss for each 
      iteration of the validation
    */
@@ -48,7 +47,6 @@ public:
        const MatrixType& instances,
        const IndexVectorType& bagLabels,
        TrainerType& trainer,
-       TesterType& tester,
        const ParamsType& params );
 
 private:  
@@ -141,6 +139,7 @@ private:
   {
     LLPData D;
 
+    // We need to relabel the bags such that indices can be used to index p
     std::unordered_map<int, std::size_t > I;
     
     // Find the bag proportions we need
@@ -165,24 +164,20 @@ private:
       auto idx = instanceIndices[i];
       D.instances.row(i) = instances.row(idx);
       D.bagLabels[i] = I[bagLabels[idx]];
-    }
-
-    // We need to relabel the bags such that indices can be used to index p
-    
+    }    
     
     return D;
   }
 };
 
 
-template< typename TBagTrainer, typename TBagTester >
-typename LLPCrossValidator<TBagTrainer, TBagTester>::ResultType
-LLPCrossValidator<TBagTrainer, TBagTester>
+template< typename TBagTrainer >
+typename LLPCrossValidator< TBagTrainer >::ResultType
+LLPCrossValidator< TBagTrainer >
 ::run( const VectorType& p,
        const MatrixType& instances,
        const IndexVectorType& bagLabels,
        TrainerType& trainer,
-       TesterType& tester,
        const ParamsType& params )
 {
 
@@ -219,42 +214,24 @@ LLPCrossValidator<TBagTrainer, TBagTester>
       std::sort( split.test.begin(), split.test.end() );
       std::sort( split.train.begin(), split.train.end() );
     }
-    result.models.emplace_back( );
+    ModelType model;
 
     auto trainData = pick( p, instances, bagLabels, split.train );
     auto testData = pick( p, instances, bagLabels, split.test );
-
-    // std::cout << trainData.p.size() << std::endl
-    //   	      << trainData.instances.rows() << ", " << trainData.instances.cols()  << std::endl
-    // 	      << trainData.bagLabels.size() << std::endl;
-
-    // std::cout << trainData.p << std::endl;
-
-    // int oldlabel = -1;
-    // for ( auto label : trainData.bagLabels ) {
-    //   if ( label > oldlabel ) {
-    // 	std::cout << label << std::endl;
-    // 	oldlabel = label;
-    //   }
-    // }
-
-    // std::cout << trainData.instances.row(0) << std::endl << std::endl
-    // 	      << trainData.instances.row( trainData.instances.rows() - 1 ) << std::endl << std::endl;
-
-    // return result;
     
     result.trainingLosses.push_back(
       trainer.train( trainData.p,
 		     trainData.instances,
 		     trainData.bagLabels,
-		     result.models.back() )
+		     model )
     );
-    result.testLosses.push_back(
-      tester.test( testData.p,
-		   testData.instances,
-		   testData.bagLabels,
-		   result.models.back() )
-    );
+
+    auto predictions = model.predictBags( testData.instances,
+					  testData.bagLabels,
+					  testData.p.size() );
+    for ( std::size_t i = 0; i < split.test.size(); ++i ) {
+      result.predictions(split.test[i]) = predictions(i);
+    }
   }
   
   return result;

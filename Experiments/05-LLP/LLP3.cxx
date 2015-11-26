@@ -19,7 +19,6 @@
 #include "ClusterModel.h"
 #include "ClusterModelTrainer3.h"
 #include "ClusterModelTrainerParameters.h"
-#include "ClusterModelTester2.h"
 
 #include "LLPCrossValidator.h"
 
@@ -92,7 +91,7 @@ int main(int argc, char *argv[]) {
   TCLAP::ValueArg<std::string> 
     outputArg("o", 
 	      "output", 
-	      "Path to output file to write results to",
+	      "Base path for output files",
 	      true,
 	      "",
 	      "path", 
@@ -136,9 +135,6 @@ int main(int argc, char *argv[]) {
   typedef typename TrainerType::ModelType ModelType;  
   typedef typename ModelType::MatrixType MatrixType;
   typedef typename ModelType::VectorType VectorType;
-  typedef ClusterModelTester<
-    ModelType,
-    BagProportionError< VectorType, MatrixType > > TesterType;
   
   typedef int LabelType;
   typedef double ElementType;
@@ -231,7 +227,7 @@ int main(int argc, char *argv[]) {
 
   
   // We want to use cross validation to estimate the performance
-  typedef LLPCrossValidator< TrainerType, TesterType > ValidatorType;
+  typedef LLPCrossValidator< TrainerType > ValidatorType;
   const unsigned int nFolds = 10;
   CrossValidationParams cvParams(
     CrossValidationType::K_FOLD,
@@ -239,22 +235,22 @@ int main(int argc, char *argv[]) {
     false    // Shuffle instances before partitioning in folds
   );
 
-  // This guy should include more clustering specific parameters
+  
+  std::string cmaesOutputPath = outputPath + "_cmaes_trace.dat";
   ClusterModelTrainerParameters trainerParams(
-    nHistograms, // Feature space dimension
-    k,           // Number of clusters
-    maxIters,    // Maximum number of iterations of CMA-ES
-    outputPath,  // Path to trace file for CMA-ES
-    -1,          // Sigma for CMA-ES
-    -1,          // Lambda for CMA-ES
-    0,           // Random seed for CMA-ES
-    false        // Toggle trace for trainer
+    nHistograms,      // Feature space dimension
+    k,                // Number of clusters
+    maxIters,         // Maximum number of iterations of CMA-ES
+    cmaesOutputPath,  // Path to trace file for CMA-ES
+    -1,               // Sigma for CMA-ES
+    -1,               // Lambda for CMA-ES
+    0,                // Random seed for CMA-ES
+    false             // Toggle trace for trainer
   );
 
   ClustererType clusterer( branching );
   LabellerType labeller;
   TrainerType trainer( clusterer, labeller, trainerParams );
-  TesterType tester;
 
   // typename TrainerType::ModelType model;
   // auto trainLoss = trainer.train( bagProportions, 
@@ -276,15 +272,21 @@ int main(int argc, char *argv[]) {
   			       instances,
   			       bagLabels,
   			       trainer,
-  			       tester,
   			       cvParams );
   
   // Store the results
-  std::ofstream out( "LLP3.result" );
-  out << "trainLoss, testLoss" << std::endl; 
+  std::string predictionsOutputPath = outputPath + "_cv_predictions.txt";
+  std::ofstream predictionsOut( predictionsOutputPath );
+  predictionsOut << "target, prediction" << std::endl;
+  for ( std::size_t i = 0; i < bagProportions.size(); ++i ) {
+    predictionsOut << bagProportions(i) << ", "
+		   << result.predictions(i) << std::endl;
+  }
+
+  std::string lossesOutputPath = outputPath + "_cv_training_loss.txt";
+  std::ofstream lossesOut( lossesOutputPath );
   for ( std::size_t i = 0; i < result.trainingLosses.size(); ++i ) {
-    out << result.trainingLosses[i] << ", "
-  	<< result.testLosses[i] << std::endl;
+    lossesOut << result.trainingLosses[i] << std::endl;
   }
   
   return 0;
