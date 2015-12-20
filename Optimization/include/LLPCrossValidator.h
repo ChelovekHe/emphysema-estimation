@@ -23,7 +23,8 @@ public:
   typedef typename ModelType::IndexVectorType IndexVectorType;
   
   struct ResultType {
-    VectorType predictions;
+    VectorType bagPredictions;
+    VectorType instancePredictions;
     std::vector< double > trainingLosses;
   };
 
@@ -119,6 +120,7 @@ private:
     VectorType p;
     MatrixType instances;
     IndexVectorType bagLabels;
+    IndexVectorType instanceIndices; // Index into the original instance matrix
   };
 
   /**
@@ -151,17 +153,17 @@ private:
       
     
     // Find the instances we need
-    IndexVectorType instanceIndices;
     for ( std::size_t i = 0; i < bagLabels.size(); ++i ) {
+      // If the bag label of instance i is in the 
       if ( std::binary_search( indices.begin(), indices.end(), bagLabels[i] ) ) {
-	instanceIndices.push_back( i );
+	D.instanceIndices.push_back( i ); // This effectively forces it to be a std::vector
       }
     }
 
-    D.instances = MatrixType( instanceIndices.size(), instances.cols() );
-    D.bagLabels = IndexVectorType( instanceIndices.size() );
-    for ( std::size_t i = 0; i < instanceIndices.size(); ++i ) {
-      auto idx = instanceIndices[i];
+    D.instances = MatrixType( D.instanceIndices.size(), instances.cols() );
+    D.bagLabels = IndexVectorType( D.instanceIndices.size() );
+    for ( std::size_t i = 0; i < D.instanceIndices.size(); ++i ) {
+      auto idx = D.instanceIndices[i];
       D.instances.row(i) = instances.row(idx);
       D.bagLabels[i] = I[bagLabels[idx]];
     }    
@@ -171,6 +173,14 @@ private:
 };
 
 
+/**
+   @param p         Known label proportions for bags
+   @param instances Instances
+   @param bagLabels A bag label for each instance. Each bag label should be an 
+   index into p.
+   @param trainer   The training algorithm
+   @param params    Extra parameters
+ */
 template< typename TBagTrainer >
 typename LLPCrossValidator< TBagTrainer >::ResultType
 LLPCrossValidator< TBagTrainer >
@@ -182,6 +192,7 @@ LLPCrossValidator< TBagTrainer >
 {
 
   // We need to run cross validation on the level of bags
+  // So we split the bags into a series of train/test sets
   IndexVectorType bagIndices( p.size() );
   std::iota( bagIndices.begin(), bagIndices.end(), 0 );
   
@@ -206,19 +217,26 @@ LLPCrossValidator< TBagTrainer >
   }
   
   ResultType result;
+  result.bagPredictions = - VectorType::Ones( p.size() );
+  result.instancePredictions = - VectorType::Ones( instances.rows() );
+					 
    
   // Iterate over the splits, train and test
   for ( auto& split : splits ) {
     if ( params.shuffle ) {
       // Make sure that the indices in both test and train are sorted.
+      // The indices are bag ids (matching the values in bagLabels )
       std::sort( split.test.begin(), split.test.end() );
       std::sort( split.train.begin(), split.train.end() );
     }
     ModelType model;
 
+    // Pick all the instances that have a bag label that match one in train
     auto trainData = pick( p, instances, bagLabels, split.train );
+
+    // Pick all the instances that have a bag label that match one in test
     auto testData = pick( p, instances, bagLabels, split.test );
-    
+
     result.trainingLosses.push_back(
       trainer.train( trainData.p,
 		     trainData.instances,
@@ -226,11 +244,21 @@ LLPCrossValidator< TBagTrainer >
 		     model )
     );
 
-    auto predictions = model.predictBags( testData.instances,
-					  testData.bagLabels,
-					  testData.p.size() );
+    auto bagPredictions = model.predictBags( testData.instances,
+					     testData.bagLabels,
+					     testData.p.size() );
+    
+    std::cout << "predicted " << bagPredictions.transpose() << std::endl
+	      << "target " << testData.p.transpose() << std::endl;
+    
     for ( std::size_t i = 0; i < split.test.size(); ++i ) {
-      result.predictions(split.test[i]) = predictions(i);
+      result.bagPredictions(split.test[i]) = bagPredictions(i);
+    }
+
+    // Get the instance predictions
+    auto instancePredictions = model.predictInstances( testData.instances );
+    for ( std::size_t i = 0; i < testData.instances.rows(); ++i ) {
+      result.instancePredictions( testData.instanceIndices[i] ) = instancePredictions(i);
     }
   }
   
