@@ -2,7 +2,6 @@
 #define __ExhaustiveBinaryClusterLabeller_hxx
 
 #include "ExhaustiveBinaryClusterLabeller.h"
-#include "BagProportionError.h"
 
 template< typename TMatrix,
 	  typename TVector,
@@ -29,11 +28,13 @@ ExhaustiveBinaryClusterLabeller< TMatrix, TVector, TCostFunctor >
     }
     else {
       x.segment(0, N-i) = VectorType::Zero( N-i );
-      x.segment(N-i, i) = VectorType::Zero( i );
+      x.segment(N-i, i) = VectorType::Ones( i );
     }
     do {
       VectorType y = C*x;
       double error =  costFunction(p, y);
+      std::cout << "x: " << x << std::endl
+		<< "error: " << error << std::endl;
       if ( error < bestError ) {
 	bestError = error;
 	bestX = x;
