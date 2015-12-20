@@ -16,6 +16,7 @@ GreedyBinaryClusterLabeller< TMatrix, TVector, TCostFunctor >
   // We start with all zeros. Then we find best labelling using a single
   // ones cluster. We continue like that untill we cannot label more
   // clusters with ones without increasing the error,
+  // We must have at least one cluster with a one label
   const std::size_t N = x.size();
 
   // We keep track of which clusters are labelled zero
@@ -26,7 +27,7 @@ GreedyBinaryClusterLabeller< TMatrix, TVector, TCostFunctor >
 
   CostFunctorType costFunction;
   VectorType bestX = VectorType::Zero( N );
-  double bestError = costFunction( p, C*bestX );
+  double bestError = std::numeric_limits<double>::infinity();
 
   for ( std::size_t i = 1; i <= N; ++i ) {
     // We continue from the currently best labelling
@@ -40,7 +41,7 @@ GreedyBinaryClusterLabeller< TMatrix, TVector, TCostFunctor >
     auto bestIdx = zeroIdxs.begin();
     
     for ( auto it = zeroIdxs.begin(); it != zeroIdxs.end(); ++it ) {
-      // Try setting the label if cluster *it to one
+      // Try setting the label of cluster *it to one
       x(*it) = 1;
       double error =  costFunction(p, C*x);
       if ( error < bestError ) {
