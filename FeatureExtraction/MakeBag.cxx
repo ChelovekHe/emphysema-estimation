@@ -15,6 +15,7 @@
 #include "itkImageFileReader.h"
 #include "itkImageRegionConstIteratorWithIndex.h"
 #include "itkRegionOfInterestImageFilter.h"
+#include "itkBinaryThresholdImageFilter.h"
 #include "itkVectorImage.h"
 
 #include "DenseHistogram.h"
@@ -25,9 +26,11 @@
 #include "ROIReader.h"
 
 const std::string VERSION("0.1");
-const std::string OUT_FILE_TYPE(".txt");
 
 int main(int argc, char *argv[]) {
+  typedef float PixelType;
+  typedef unsigned short MaskPixelType;
+  
   // Commandline parsing
   TCLAP::CmdLine cmd("Create a bag of instances samples from an image.", ' ', VERSION);
 
@@ -93,12 +96,33 @@ int main(int argc, char *argv[]) {
   TCLAP::ValueArg<std::string> 
     roiArg("r", 
 	   "roi-file", 
-	   "Path to ROI file",
+	   "Path to ROI file. If given the ROIs in this file will be used,"
+	   "otherwise ROIs will be generated.",
 	   false,
 	   "",
 	   "path", 
 	   cmd);
 
+  TCLAP::ValueArg<std::string> 
+    roiMaskArg("M", 
+	       "roi-mask", 
+	       "Path to ROI mask file. If ROIs are generated an optional mask "
+	       "controlling the ROI generation can be used. If not given then "
+	       "the image mask will be used.",
+	       false,
+	       "",
+	       "path", 
+	       cmd);
+
+  TCLAP::ValueArg<MaskPixelType> 
+    roiMaskValueArg("v", 
+		    "roi-mask-value", 
+		    "Value in the ROI mask that should be used for inclusion.",
+		    false,
+		    1,
+		    "MaskPixelType", 
+		    cmd);
+  
   TCLAP::ValueArg<size_t> 
     numROIsArg("n", 
 	       "num-rois", 
@@ -162,7 +186,10 @@ int main(int argc, char *argv[]) {
   const std::string outDirPath( outDirArg.getValue() );
   const std::vector< float > scales( scalesArg.getValue() );
 
+  // Optional
   const std::string roiPath( roiArg.getValue() );
+  const std::string roiMaskPath( roiMaskArg.getValue() );
+  const MaskPixelType roiMaskValue( roiMaskValueArg.getValue() );
   const size_t numROIs( numROIsArg.getValue() );
   const size_t roiSizeX = roiSizeXArg.getValue();
   const size_t roiSizeY = roiSizeYArg.getValue();
@@ -176,8 +203,6 @@ int main(int argc, char *argv[]) {
   const unsigned int Dimension = 3;
 
   // TODO: Need to consider which pixeltype to use
-  typedef float PixelType;
-  typedef unsigned char MaskPixelType;
   typedef itk::Image< PixelType, Dimension >  ImageType;
   typedef itk::Image< MaskPixelType, Dimension >  MaskImageType;
   typedef itk::VectorImage< PixelType, Dimension >  VectorImageType;
@@ -196,6 +221,9 @@ int main(int argc, char *argv[]) {
   MaskReaderType::Pointer maskReader = MaskReaderType::New();
   maskReader->SetFileName( maskPath );
 
+  MaskReaderType::Pointer roiMaskReader = MaskReaderType::New();
+  roiMaskReader->SetFileName( roiMaskPath );
+
   // Setup a filter that ensures the mask is binary.
   // This is necesary for the feature filter, because the lung segmentation is
   // 0 => not lung. 1 => right lung.  2 => left lung.
@@ -205,6 +233,18 @@ int main(int argc, char *argv[]) {
   clampFilter->InPlaceOff();
   clampFilter->SetBounds(0, 1);
   clampFilter->SetInput( maskReader->GetOutput() );
+
+
+  // Setup a filter that can extract the requested region from the ROI mask
+  typedef itk::BinaryThresholdImageFilter<
+    MaskImageType,
+    MaskImageType > RoiThresholdFilterType;
+  RoiThresholdFilterType::Pointer roiThresholdFilter = RoiThresholdFilterType::New();
+  roiThresholdFilter->SetLowerThreshold( roiMaskValue );
+  roiThresholdFilter->SetUpperThreshold( roiMaskValue );
+  roiThresholdFilter->SetInsideValue( 1 );
+  roiThresholdFilter->SetOutsideValue( 0 );
+  roiThresholdFilter->SetInput( roiMaskReader->GetOutput() );  
   
 
   // Setup the feature filter
@@ -221,14 +261,21 @@ int main(int argc, char *argv[]) {
   // generate a set of ROIs
   std::vector< RegionType > rois;
   if ( roiPath.empty() ) {
-    // Generate the ROIs
-    typedef itk::RegionOfInterestGenerator< MaskImageType > ROIGeneratorType;
+    // Generate the ROIs. If we have a ROI mask we use that, otherwise we use the
+    // image mask
+    typedef itk::RegionOfInterestGenerator< MaskImageType > ROIGeneratorType;    
     ROIGeneratorType roiGenerator( clampFilter->GetOutput() );
+
+    if ( !roiMaskPath.empty() ) {
+      std::cout << "Using ROI mask." << std::endl;
+      roiGenerator.setMask( roiThresholdFilter->GetOutput() );
+    }
+    
     SizeType roiSize{ roiSizeX, roiSizeY, roiSizeZ };
     try {
       rois = roiGenerator.generate( numROIs, roiSize );
       // We should store the generated ROIs
-      std::string roiFileName = prefix + "ROIInfo.txt";
+      std::string roiFileName = prefix + ".ROIInfo";
       std::string roiOutPath( Path::join( outDirPath, roiFileName ) );
       std::ofstream out( roiOutPath );
       for ( auto roi : rois ) {
@@ -416,7 +463,7 @@ int main(int argc, char *argv[]) {
   }
   // At this point we should have that bag is a matrix of rois and histograms
   // If I understand Eigen correctly, we can just print the matrix directly
-  std::string fileName = prefix + "bag" + OUT_FILE_TYPE;
+  std::string fileName = prefix + ".bag";
   std::string outPath( Path::join( outDirPath, fileName ) );
   std::ofstream out( outPath );
   for ( size_t i = 0; i < bag.rows(); ++i ) {
