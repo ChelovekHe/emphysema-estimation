@@ -62,7 +62,8 @@ public:
       residuals[i] = m_P(i) - y;
       residuals[N] += m_P(i) - y;
     }
-    residuals[N] *= m_Lambda;
+    double _N = static_cast<double>(N);
+    residuals[N] *= m_Lambda/_N;
 
     if ( jacobians != NULL && jacobians[0] != NULL ) {
       // Compute the Jacobian
@@ -77,10 +78,10 @@ public:
 	  // Add to the derivative of the last term, which is the sum of all
 	  // the residual derivatives for parameter j, multiplied by lambda
 	  if ( i == 0 ) {
-	    J[N * K + j] = - m_Lambda*m_C(i,j);
+	    J[N * K + j] = - (m_Lambda/_N)*m_C(i,j);
 	  }
 	  else {
-	    J[N * K + j] -= m_Lambda*m_C(i,j);
+	    J[N * K + j] -= (m_Lambda/_N)*m_C(i,j);
 	  }
 	}
       }
