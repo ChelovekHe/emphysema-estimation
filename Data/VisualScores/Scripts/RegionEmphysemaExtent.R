@@ -27,7 +27,7 @@ RegionEmphysemaExtent <- function(path, StIds=NULL) {
     ## If we are given a set of study ids, then we only use those studies
     if ( !is.null(StIds) ) {
         scores <- subset(scores, StId %in% StIds );
-        ## We might not get all the studies we want, so we print those we use
+        ## We might not get all the studies we want, so we print those we dont use
         print( subset( data.frame(list(id=StIds)), !id %in% scores$StId )[[1]] )
     }
     
@@ -80,9 +80,6 @@ RegionEmphysemaExtent <- function(path, StIds=NULL) {
         (regionExtent[, c(1,3,5,7,9,11)] + regionExtent[, c(2,4,6,8,10,12)]) / 2;
     colnames( avgRegionExtent ) <- c("ERU", "ERM", "ERL",
                                      "ELU", "ELM", "ELL");
-
-    print( regionExtent )
-    print(avgRegionExtent)
     
     list(StudyId=scores$StId,
          Date=scores$Dato.1,
