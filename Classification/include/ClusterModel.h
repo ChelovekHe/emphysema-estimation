@@ -7,6 +7,8 @@
 
  */
 
+#include <memory>
+
 #include "flann/flann.hpp"
 
 #include "Types.h"
