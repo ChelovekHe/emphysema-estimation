@@ -13,7 +13,6 @@
 
 #include "KMeansClusterer2.h"
 #include "BagProportionError.h"
-#include "WeightedBagProportionError.h"
 #include "GreedyBinaryClusterLabeller.h"
 
 #include "ClusterModel.h"

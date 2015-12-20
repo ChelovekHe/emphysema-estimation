@@ -16,7 +16,6 @@
 #include "ContinousClusterLabeller.h"
 
 #include "BagProportionError.h"
-#include "WeightedBagProportionError.h"
 #include "GreedyBinaryClusterLabeller.h"
 
 #include "ClusterModel.h"

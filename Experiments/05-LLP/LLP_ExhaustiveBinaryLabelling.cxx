@@ -13,7 +13,6 @@
 
 #include "KMeansClusterer2.h"
 #include "BagProportionError.h"
-#include "WeightedBagProportionError.h"
 #include "ExhaustiveBinaryClusterLabeller.h"
 
 #include "ClusterModel.h"
@@ -146,7 +145,7 @@ int main(int argc, char *argv[]) {
   typedef ExhaustiveBinaryClusterLabeller<
     MatrixType,
     VectorType,
-    WeightedBagProportionError > LabellerType;
+    BagProportionError > LabellerType;
 
   typedef ClusterModelTrainer3< ClustererType, LabellerType > TrainerType;
   typedef typename TrainerType::ModelType ModelType;  
