@@ -16,7 +16,7 @@ struct BagProportionError {
   ResultType
   operator()( const VectorType& y) {
     VectorType diff = m_P - y;
-    ResultType diffSum = diff.sum();
+    ResultType diffSum = diff.sum()/static_cast<double>(diff.size());
     ResultType error = diff.squaredNorm() + m_Lambda*diffSum*diffSum;
     
     return error;
@@ -25,7 +25,7 @@ struct BagProportionError {
   ResultType
   operator()( const VectorType& p, const VectorType& y) {
     VectorType diff = p - y;
-    ResultType diffSum = diff.sum();
+    ResultType diffSum = diff.sum()/diff.size();
     ResultType error = diff.squaredNorm() + m_Lambda*diffSum*diffSum;
     
     return error;

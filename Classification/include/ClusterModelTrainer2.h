@@ -1,5 +1,5 @@
-#ifndef __ClusterModelTrainer_h
-#define __ClusterModelTrainer_h
+#ifndef __ClusterModelTrainer2_h
+#define __ClusterModelTrainer2_h
 
 #include <vector>
 
@@ -11,11 +11,13 @@
 
 template< typename TClusterer,
 	  typename TLabeller >
-class ClusterModelTrainer
-  : private TClusterer, private TLabeller
+class ClusterModelTrainer2
 {
 public:
-  typedef ClusterModelTrainer< TClusterer, TLabeller > Self;
+  typedef ClusterModelTrainer2< TClusterer, TLabeller > Self;
+
+  typedef TClusterer ClustererType;
+  typedef TLabeller LabellerType;
   
   typedef typename TClusterer::ClusteringType ClusteringType;
   typedef typename TClusterer::IndexVectorType IndexVectorType;
@@ -27,9 +29,6 @@ public:
   typedef ClusterModelTrainerParameters ParamsType;
   typedef double LossResultType;
   
-  using TClusterer::cluster;
-  using TLabeller::label;
-
   /* 
      Struct that holds trace of execution
   */
@@ -53,7 +52,7 @@ public:
     @param trace       Flag controlling if a trace of the execution should
                        be stored.
    */
-  ClusterModelTrainer( const MatrixType& data,
+  ClusterModelTrainer2( const MatrixType& data,
 		       const unsigned int& featureSpaceDimension,
 		       bool trace=false )
     :
@@ -63,7 +62,9 @@ public:
     m_BagIndices( data.rows() ),
     m_TraceEnabled( trace ),
     m_Trace( ),
-    m_K( 0 )
+    m_K( 0 ),
+    m_Clusterer(),
+    m_Labeller()
   {
     VectorType bagIndices = data.col( data.cols() - 1 );
     for ( std::size_t i = 0; i < bagIndices.size(); ++i ) {
@@ -85,7 +86,7 @@ public:
     @param trace       Flag controlling if a trace of the execution should
                        be stored.
    */
-  ClusterModelTrainer( const VectorType& p,
+  ClusterModelTrainer2( const VectorType& p,
 		       const MatrixType& instances,
 		       const unsigned int& featureSpaceDimension,
 		       const IndexVectorType& bagIndices,
@@ -96,7 +97,9 @@ public:
       m_BagIndices( bagIndices ),
       m_TraceEnabled( trace ),
       m_Trace( ),
-      m_K( 0 )
+      m_K( 0 ),
+      m_Clusterer(),
+      m_Labeller()
   {}
 
   void traceOn() { m_TraceEnabled = true; }
@@ -143,15 +146,17 @@ private:
   bool m_TraceEnabled;
   Trace m_Trace;
   std::size_t m_K;
+  ClustererType m_Clusterer;
+  LabellerType m_Labeller;
 };
 
 
 template< typename TClusterer, typename TLabeller >
 double
-ClusterModelTrainer< TClusterer, TLabeller >
+ClusterModelTrainer2< TClusterer, TLabeller >
 ::run( const double* weights, const int& N ) {
   DistanceFunctorType dist( weights, N );
-  auto clustering = cluster( m_Instances, dist, m_K);
+  auto clustering = m_Clusterer.cluster( m_Instances, dist, m_K);
 
   // Find mapping from clusters to bags
   const std::size_t k = clustering.centers.rows();
@@ -167,7 +172,7 @@ ClusterModelTrainer< TClusterer, TLabeller >
   
   // Find labels 
   VectorType labels = VectorType::Zero( k );
-  double loss = label( m_P, C, labels );
+  double loss = m_Labeller.label( m_P, C, labels );
 
   if ( m_TraceEnabled ) {
     m_Trace.clusterings.push_back( clustering );
@@ -181,20 +186,20 @@ ClusterModelTrainer< TClusterer, TLabeller >
 
 template< typename TClusterer, typename TLabeller >
 double 
-ClusterModelTrainer< TClusterer, TLabeller >
+ClusterModelTrainer2< TClusterer, TLabeller >
 ::train( ModelType& cm,
 	 const ClusterModelTrainerParameters& params )
 {
   m_K = params.k;
-  this->setBranching( params.branching );
-  VectorType weights( m_FeatureSpaceDimension );
+  m_Clusterer.setBranching( params.branching );
+  VectorType weights = VectorType::Ones( m_FeatureSpaceDimension ) * 0.5;
   
   // We want to find a weighting of the feature space, such that the
   // weights are constrained to lie in [0,1].
   std::vector< double > lBounds( weights.size(), 0.0 );
   std::vector< double > uBounds( weights.size(), 1.0 );
   GenoPheno gp( &lBounds.front(), &uBounds.front(), weights.size() );
-
+  
   CMAParameters cmaParams( weights.size(),
 			   weights.data(),
 			   params.sigma,
@@ -230,19 +235,22 @@ ClusterModelTrainer< TClusterer, TLabeller >
   
   // Now we use the weights we found in the optimization to train a model
   DistanceFunctorType dist( weights.data(), weights.size() );
-  auto clustering = cluster( m_Instances, dist, m_K );
+  auto clustering = m_Clusterer.cluster( m_Instances, dist, m_K );
 
-  MatrixType C = MatrixType::Zero( weights.size(), m_K );
+  const std::size_t k = clustering.centers.rows();
+
+  assert( m_BagIndices.size() == clustering.indices.size() );
+  MatrixType C = MatrixType::Zero( m_P.size(), k );
   coOccurenceMatrix( m_BagIndices.begin(),
 		     m_BagIndices.end(),
 		     clustering.indices.begin(),
 		     clustering.indices.end(),
 		     C );
   C = rowNormalize(C);
-  
+
   // Find labels 
-  VectorType labels = VectorType::Zero( m_K );
-  double loss = label( m_P, C, labels );
+  VectorType labels = VectorType::Zero( k );
+  double loss = m_Labeller.label( m_P, C, labels );
 
   cm.setCenters( clustering.centers );
   cm.setLabels( labels );

@@ -7,6 +7,7 @@ set( progs
   FiniteDifference_GradientFeatures
   ExtractFeatures
   ExtractLabels
+  ExtractMaskedRegion
   MakeBag
   )
 foreach( prog ${progs} )

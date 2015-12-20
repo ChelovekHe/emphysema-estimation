@@ -9,12 +9,15 @@ namespace itk {
   class RegionOfInterestGenerator {
   public:
     typedef TMask MaskType;
+    typedef typename MaskType::Pointer MaskPointer;
     typedef typename MaskType::IndexType IndexType;
     typedef typename MaskType::SizeType SizeType;
     typedef typename MaskType::RegionType RegionType;
   
-    RegionOfInterestGenerator(MaskType* mask);
+    RegionOfInterestGenerator(MaskPointer mask);
 
+    void setMask(MaskPointer mask);
+    
     std::vector< RegionType >
     generate( size_t numberOfROIs, SizeType size );
 
@@ -22,7 +25,7 @@ namespace itk {
     typedef ImageRandomConstIteratorWithIndex< MaskType > RandomIteratorType;
   
   private:
-    MaskType* m_Mask;
+    MaskPointer m_Mask;
   };
 }
 #ifndef ITK_MANUAL_INSTANTIATION

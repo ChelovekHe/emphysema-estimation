@@ -12,9 +12,8 @@
 #include "tclap/CmdLine.h"
 
 #include "KMeansClusterer2.h"
-#include "LLPCostFunction.h"
 #include "BagProportionError.h"
-#include "ContinousClusterLabeller.h"
+#include "ExhaustiveBinaryClusterLabeller.h"
 
 #include "ClusterModel.h"
 #include "ClusterModelTrainer3.h"
@@ -25,6 +24,8 @@
 #include "WeightedEarthMoversDistance2.h"
 
 #include "IO.h"
+#include "Types.h"
+
 
 const std::string LLP_VERSION = "1";
 
@@ -112,18 +113,9 @@ int main(int argc, char *argv[]) {
 		"Maximum iterations of CMA-ES. Set to <= 0 to let CMA-ES decide.",
 		false,
 		0,
-		"int", 
+		"it", 
 		cmd);
-
-    TCLAP::ValueArg<unsigned int>
-      nFoldsArg("f", 
-		"num-folds", 
-		"Number of folds in cross validation.",
-		false,
-		10,
-		"int", 
-		cmd);
-    
+  
   try {
     cmd.parse(argc, argv);
   } catch(TCLAP::ArgException &e) {
@@ -143,18 +135,20 @@ int main(int argc, char *argv[]) {
   const size_t k{ kArg.getValue() };
   const std::string outputPath{ outputArg.getValue() };
   const int maxIters{ maxItersArg.getValue() };
-  const unsigned int nFolds{ nFoldsArg.getValue() };
   
   //// Commandline parsing is done ////
-
+  typedef ee_llp::DoubleRowMajorMatrixType MatrixType;
+  typedef ee_llp::DoubleColumnVectorType VectorType;
+  
   typedef WeightedEarthMoversDistance2 DistanceFunctorType;
   typedef KMeansClusterer2< DistanceFunctorType > ClustererType;
-  typedef ContinousClusterLabeller< LLPCostFunction > LabellerType;
+  typedef ExhaustiveBinaryClusterLabeller<
+    MatrixType,
+    VectorType,
+    BagProportionError > LabellerType;
 
   typedef ClusterModelTrainer3< ClustererType, LabellerType > TrainerType;
   typedef typename TrainerType::ModelType ModelType;  
-  typedef typename ModelType::MatrixType MatrixType;
-  typedef typename ModelType::VectorType VectorType;
   
   typedef int LabelType;
   typedef double ElementType;
@@ -248,6 +242,7 @@ int main(int argc, char *argv[]) {
   
   // We want to use cross validation to estimate the performance
   typedef LLPCrossValidator< TrainerType > ValidatorType;
+  const unsigned int nFolds = 10;
   CrossValidationParams cvParams(
     CrossValidationType::K_FOLD,
     nFolds, // how many folds to use
@@ -294,7 +289,7 @@ int main(int argc, char *argv[]) {
   			       cvParams );
   
   // Store the results
-    std::string bagPredictionsOutputPath = outputPath + "_cv_bag_predictions.txt";
+  std::string bagPredictionsOutputPath = outputPath + "_cv_bag_predictions.txt";
   std::ofstream bagPredictionsOut( bagPredictionsOutputPath );
   bagPredictionsOut << "target prediction" << std::endl;
   for ( std::size_t i = 0; i < bagProportions.size(); ++i ) {

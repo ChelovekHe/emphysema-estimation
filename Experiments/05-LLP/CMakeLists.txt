@@ -12,6 +12,9 @@ set( LIBS
 set( progs 
   LLP
   LLP3
+  LLP_ExhaustiveBinaryLabelling
+  LLP_GreedyBinaryLabelling
+  LLP_euclid
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )

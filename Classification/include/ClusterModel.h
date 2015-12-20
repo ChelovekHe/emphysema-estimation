@@ -7,6 +7,8 @@
 
  */
 
+#include <memory>
+
 #include "flann/flann.hpp"
 
 #include "Types.h"
@@ -85,7 +87,7 @@ public:
 
   
   VectorType
-  predict( const MatrixType& instances ) const {
+  predictInstances( const MatrixType& instances ) const {
     // We want to find exact matches
     SearchParamsType searchParams( flann::FLANN_CHECKS_UNLIMITED );
     searchParams.use_heap = flann::FLANN_False;
@@ -107,9 +109,22 @@ public:
     for ( std::size_t i = 0; i < predictions.size(); ++i ) {
       predictions(i) = m_Labels( indices[i] );
     }
-    return predictions;
+    return std::move( predictions );
   }
-  
+
+  VectorType
+  predictBags( const MatrixType& instances,
+	       const IndexVectorType& bagLabels,
+	       const std::size_t numberOfBags ) const {
+    VectorType instancePrediction = predictInstances( instances );
+    VectorType bagPrediction = VectorType::Zero( numberOfBags );
+    VectorType bagCounts = VectorType::Zero( numberOfBags );
+    for ( std::size_t i = 0; i < bagLabels.size(); ++i ) {
+      bagPrediction( bagLabels[i] ) += instancePrediction(i);
+      bagCounts( bagLabels[i] ) += 1; 
+    }
+    return std::move( bagPrediction.cwiseQuotient( bagCounts ) );
+  }
 
 private:
   typedef typename flann::LinearIndexParams IndexParamsType;

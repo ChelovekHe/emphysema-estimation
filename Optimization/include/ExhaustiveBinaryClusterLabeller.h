@@ -19,6 +19,8 @@
   For larger K, look at "GreedyBinaryClusterLabeller.h" or 
   "ContinousClusterLabeller.h"
 */
+#include "ClusterLabellerBase.h"
+
 
 template< typename TMatrix,
 	  typename TVector,

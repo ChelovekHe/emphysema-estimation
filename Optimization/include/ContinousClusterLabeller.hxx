@@ -16,10 +16,12 @@ ContinousClusterLabeller< TCostFunctor >
   }
 
   if ( C.rows() != p.size() ) {
-    throw std::invalid_argument("Size of p and C must match" );
+    std::string msg = "Size of p and C must match";
+    std::cerr << msg << std::endl
+	      << p.size() << " " << C.rows() << std::endl;
+    throw std::invalid_argument( msg );
   }
 
-  VectorType initialX = x;
   CostFunctorType* costFunction = new CostFunctorType(p, C);
 
   // Create the parameter group
@@ -36,6 +38,7 @@ ContinousClusterLabeller< TCostFunctor >
 
   // Solve the problem
   ceres::Solver::Options options;
+  options.max_num_iterations = 150;
   options.linear_solver_type = ceres::DENSE_QR;
   options.minimizer_progress_to_stdout = false;
   ceres::Solver::Summary summary;
