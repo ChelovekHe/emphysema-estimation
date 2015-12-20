@@ -168,34 +168,48 @@ ClusterModelTrainer3< TClusterer, TLabeller >
 	      << "CMA-ES error code: " << solutions.run_status() << std::endl;
     return std::numeric_limits<double>::infinity();
   }
+
+  // Print the iteration count
+  std::cout << "Used " << solutions.niter() << " iterations" << std::endl;
   
   // Now we use the weights we found in the optimization to train a model
+  weights = gp.pheno( solutions.best_candidate().get_x_dvec() );
+  std::cout << weights << std::endl;
+  
   DistanceFunctorType dist( weights.data(), weights.size() );
-  auto clustering = m_Clusterer.cluster( instances, dist, m_Params.k );
-
-  const std::size_t k = clustering.centers.rows();
-
-  assert( bagLabels.size() == clustering.indices.size() );
-  MatrixType C = MatrixType::Zero( p.size(), k );
-  coOccurenceMatrix( bagLabels.begin(),
-		     bagLabels.end(),
-		     clustering.indices.begin(),
-		     clustering.indices.end(),
-		     C );
-  C = rowNormalize(C);
-
-  // Find labels 
-  VectorType labels = VectorType::Zero( k );
-  double loss = m_Labeller.label( p, C, labels );
-
-  // Build the model
-  cm.setCenters( clustering.centers );
-  cm.setLabels( labels );
   cm.weights() = weights;
+
+  // We iterate 10 times to give an idea of how stable the clustering is
+  double bestLoss = std::numeric_limits<double>::infinity();  
+  for ( int i = 0; i < 10; ++i ) {
+    auto clustering = m_Clusterer.cluster( instances, dist, m_Params.k );
+
+    const std::size_t k = clustering.centers.rows();
+
+    assert( bagLabels.size() == clustering.indices.size() );
+    MatrixType C = MatrixType::Zero( p.size(), k );
+    coOccurenceMatrix( bagLabels.begin(),
+		       bagLabels.end(),
+		       clustering.indices.begin(),
+		       clustering.indices.end(),
+		       C );
+    C = rowNormalize(C);
+
+    // Find labels 
+    VectorType labels = VectorType::Zero( k );
+    double loss = m_Labeller.label( p, C, labels );
+    std::cout << loss << std::endl;
+
+    if ( loss < bestLoss ) {
+      bestLoss = loss;
+      cm.setCenters( clustering.centers );
+      cm.setLabels( labels );
+    }
+  }
 
   cm.build();
   
-  return loss;
+  return bestLoss;
 }
   
 #endif
