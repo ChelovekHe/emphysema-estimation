@@ -7,9 +7,16 @@ namespace itk {
 
   template<typename TMask>
   RegionOfInterestGenerator<TMask>::
-  RegionOfInterestGenerator(TMask* mask) : m_Mask(mask) {} 
+  RegionOfInterestGenerator(MaskPointer mask) : m_Mask(mask) {} 
 
+  template<typename TMask>
+  void
+  RegionOfInterestGenerator<TMask>::
+  setMask(MaskPointer mask) {
+    m_Mask = mask;
+  }
 
+  
   template<typename TMask>
   std::vector< typename TMask::RegionType >
   RegionOfInterestGenerator<TMask>::
