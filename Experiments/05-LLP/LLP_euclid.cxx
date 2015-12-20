@@ -13,8 +13,11 @@
 
 #include "KMeansClusterer2.h"
 #include "LLPCostFunction.h"
-#include "BagProportionError.h"
 #include "ContinousClusterLabeller.h"
+
+#include "BagProportionError.h"
+#include "WeightedBagProportionError.h"
+#include "GreedyBinaryClusterLabeller.h"
 
 #include "ClusterModel.h"
 #include "ClusterModelTrainer3.h"
@@ -22,7 +25,7 @@
 
 #include "LLPCrossValidator.h"
 
-#include "WeightedEarthMoversDistance2.h"
+#include "MyL2Dist.h"
 
 #include "IO.h"
 
@@ -146,15 +149,21 @@ int main(int argc, char *argv[]) {
   const unsigned int nFolds{ nFoldsArg.getValue() };
   
   //// Commandline parsing is done ////
-
-  typedef WeightedEarthMoversDistance2 DistanceFunctorType;
+  typedef ee_llp::DoubleRowMajorMatrixType MatrixType;
+  typedef ee_llp::DoubleColumnVectorType VectorType;
+  
+  typedef MyL2Dist DistanceFunctorType;
   typedef KMeansClusterer2< DistanceFunctorType > ClustererType;
-  typedef ContinousClusterLabeller< LLPCostFunction > LabellerType;
+  // typedef ContinousClusterLabeller< LLPCostFunction > LabellerType;
+  typedef GreedyBinaryClusterLabeller<
+    MatrixType,
+    VectorType,
+    BagProportionError > LabellerType;
 
   typedef ClusterModelTrainer3< ClustererType, LabellerType > TrainerType;
   typedef typename TrainerType::ModelType ModelType;  
-  typedef typename ModelType::MatrixType MatrixType;
-  typedef typename ModelType::VectorType VectorType;
+  //typedef typename ModelType::MatrixType MatrixType;
+  //typedef typename ModelType::VectorType VectorType;
   
   typedef int LabelType;
   typedef double ElementType;
@@ -294,7 +303,7 @@ int main(int argc, char *argv[]) {
   			       cvParams );
   
   // Store the results
-    std::string bagPredictionsOutputPath = outputPath + "_cv_bag_predictions.txt";
+  std::string bagPredictionsOutputPath = outputPath + "_cv_bag_predictions.txt";
   std::ofstream bagPredictionsOut( bagPredictionsOutputPath );
   bagPredictionsOut << "target prediction" << std::endl;
   for ( std::size_t i = 0; i < bagProportions.size(); ++i ) {
@@ -308,7 +317,7 @@ int main(int argc, char *argv[]) {
   for ( std::size_t i = 0; i < result.instancePredictions.size(); ++i ) {
     instancePredictionsOut << result.instancePredictions(i) << std::endl;
   }
-
+  
   std::string lossesOutputPath = outputPath + "_cv_training_loss.txt";
   std::ofstream lossesOut( lossesOutputPath );
   for ( std::size_t i = 0; i < result.trainingLosses.size(); ++i ) {
