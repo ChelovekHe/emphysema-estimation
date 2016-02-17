@@ -12,7 +12,7 @@
 #include "tclap/CmdLine.h"
 
 #include "KMeansClusterer2.h"
-#include "BagProportionError.h"
+#include "BagProportionError2.h"
 #include "GreedyBinaryClusterLabeller.h"
 
 #include "ClusterModel.h"
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
   typedef GreedyBinaryClusterLabeller<
     MatrixType,
     VectorType,
-    BagProportionError > LabellerType;
+    BagProportionError2 > LabellerType;
 
   typedef ClusterModelTrainer3< ClustererType, LabellerType > TrainerType;
   typedef typename TrainerType::ModelType ModelType;  
@@ -250,16 +250,16 @@ int main(int argc, char *argv[]) {
   );
 
   
-  std::string cmaesOutputPath = outputPath + "_cmaes_trace.dat";
+  std::string cmaesOutputPath = outputPath;
   ClusterModelTrainerParameters trainerParams(
     nHistograms,      // Feature space dimension
     k,                // Number of clusters
     maxIters,         // Maximum number of iterations of CMA-ES
     cmaesOutputPath,  // Path to trace file for CMA-ES
-    -1,               // Sigma for CMA-ES
+    0.5,               // Sigma for CMA-ES
     -1,               // Lambda for CMA-ES
     0,                // Random seed for CMA-ES
-    false             // Toggle trace for trainer
+    false              // Toggle trace for trainer
   );
 
   ClustererType clusterer( branching, kMeansIterations );

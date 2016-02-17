@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
     branchingArg("B", 
 		 "branching", 
 		 "Branching parameter to pass to flann",
-		 true,
+		 false,
 		 2,
 		 ">=2", 
 		 cmd);

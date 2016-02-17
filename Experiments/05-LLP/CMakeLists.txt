@@ -12,6 +12,7 @@ set( LIBS
 set( progs 
   LLP
   LLP3
+  LLP_Continuous
   LLP_ExhaustiveBinaryLabelling
   LLP_GreedyBinaryLabelling
   LLP_euclid

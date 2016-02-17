@@ -12,7 +12,7 @@
 #include "tclap/CmdLine.h"
 
 #include "KMeansClusterer2.h"
-#include "LLPCostFunction.h"
+#include "LLPCostFunction2.h"
 #include "BagProportionError.h"
 #include "ContinousClusterLabeller.h"
 
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
   typedef WeightedEarthMoversDistance2 DistanceFunctorType;
   typedef KMeansClusterer2< DistanceFunctorType > ClustererType;
-  typedef ContinousClusterLabeller< LLPCostFunction > LabellerType;
+  typedef ContinousClusterLabeller< LLPCostFunction2 > LabellerType;
 
   typedef ClusterModelTrainer3< ClustererType, LabellerType > TrainerType;
   typedef typename TrainerType::ModelType ModelType;  
