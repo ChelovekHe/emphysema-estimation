@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     histSizeArg("s", 
 		"histogram-size", 
 		"Number of bins in each histogram",
-		true,
+		false,
 		41,
 		"size_t", 
 		cmd);

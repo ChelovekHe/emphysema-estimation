@@ -27,6 +27,8 @@ These are used unless specified otherwise.
 * `iterations` is set to default value (= 11)
 * `centers_init` is set to `CENTERS_KMEANSPP`
 
+TODO: Try iterating until convergence.
+
 ### Experiments ###
 * Stability-1: Branching =  2. Clusters = [2, 4, 8, 16, 32, 64]
 * Stability-2: Branching =  4. Clusters = [   4, 7, 16, 31, 64]
