@@ -1,6 +1,6 @@
-#/usr/bin/python3
+#!/usr/bin/python3
 
-import sys, subprocess
+import sys, subprocess, os.path
 
 def main():
     skip = []

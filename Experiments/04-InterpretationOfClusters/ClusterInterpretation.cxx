@@ -10,8 +10,8 @@
 #include "flann/flann.hpp"
 #include "tclap/CmdLine.h"
 
-#include "WeightedEarthMoversDistance.h"
-#include "KMeansClusterer.h"
+#include "WeightedEarthMoversDistance2.h"
+#include "KMeansClusterer2.h"
 #include "IO.h"
 
 const std::string VERSION = "1";
@@ -108,9 +108,9 @@ int main(int argc, char *argv[]) {
   //// Commandline parsing is done ////
 
   typedef unsigned char LabelType;
-  typedef float ElementType;
-  typedef WeightedEarthMoversDistance< ElementType > DistanceType;
-  typedef KMeansClusterer< DistanceType > ClustererType;
+  typedef double ElementType;
+  typedef WeightedEarthMoversDistance2 DistanceType;
+  typedef KMeansClusterer2< DistanceType > ClustererType;
   typedef typename ClustererType::MatrixType MatrixType;
   typedef Eigen::Matrix< ElementType, Eigen::Dynamic, 1 > VectorType;
 
@@ -174,18 +174,16 @@ int main(int argc, char *argv[]) {
 	    << "nBins " << nBins << std::endl;
   
   // All histograms have equal weight
-  typedef DistanceType::FeatureWeightType FeatureWeightType;
-  std::vector< FeatureWeightType >
-    weights{ nHistograms, std::make_pair(nBins, 1.0) };
+  std::vector< double > weights( nHistograms, 1.0 );
       
-  DistanceType dist( weights ); 
+  DistanceType dist( &weights[0], nBins ); 
 
   // Prepare the outfile
   std::ofstream out( outputPath );
 
   // Setup the clusterer
-  typedef typename ClustererType::ResultType ResultType;
   ClustererType clusterer( branching, iterations, centersInit );
+  typedef typename ClustererType::ClusteringType ResultType;
   
   // We do several iterations and calculate entropy for each
   for ( size_t n = 0; n < nIterations; ++n ) {

@@ -9,8 +9,8 @@ def main():
         'Scans',
         'GOLD',
         'GOLD2',
-        #'COPD',
-        #'COPD2',
+        'COPD',
+        'COPD2',
     ]
     
     basedir = ''

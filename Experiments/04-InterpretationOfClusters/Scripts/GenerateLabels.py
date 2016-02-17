@@ -3,12 +3,12 @@ import sys, os.path, subprocess, csv
 
 def main():
     skip = [
-        'LungsLeftRight',
-        'LungsInteriorBorder',
-        'Regions',
-        'Scans',
-        'GOLD',
-        #'COPD',
+#        'LungsLeftRight',
+#        'LungsInteriorBorder',
+#        'Regions',
+#        'Scans',
+#        'GOLD',
+#        #'COPD',
     ]
         
     basedir = ''

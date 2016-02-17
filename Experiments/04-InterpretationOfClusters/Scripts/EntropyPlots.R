@@ -28,7 +28,10 @@ PlotEntropies <- function(inpath, outpath, plottitle, normalization) {
             names=seq(1,k),
             xlab="Clusters",
             ylab="Entropy",
-            main=plottitle
+            main=plottitle,
+            cex.main=1.5,
+            cex.lab=1.5,
+            cex.axis=1.5
             );
     dev.off();
 }
