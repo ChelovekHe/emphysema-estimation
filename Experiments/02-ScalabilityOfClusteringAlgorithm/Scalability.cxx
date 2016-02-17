@@ -7,8 +7,8 @@
 
 #include "tclap/CmdLine.h"
 
-#include "WeightedEarthMoversDistance.h"
-#include "KMeansClusterer.h"
+#include "WeightedEarthMoversDistance2.h"
+#include "KMeansClusterer2.h"
 #include "RuntimeMeasurement.h"
 #include "IO.h"
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 	      cmd);
 
   TCLAP::ValueArg<size_t> 
-    iterationsArg("I", 
+    iterationsArg("N", 
 		  "iterations", 
 		  "Number of measurement iterations",
 		  false,
@@ -80,7 +80,15 @@ int main(int argc, char *argv[]) {
 		  ">= 1", 
 		  cmd);
 
-    
+  TCLAP::ValueArg<int> 
+    kMeansIterationsArg("I", 
+			"kmeans-iterations", 
+			"Iterations parameter to pass to flann",
+			false,
+			11,
+			">=2", 
+			cmd);
+  
   try {
     cmd.parse(argc, argv);
   } catch(TCLAP::ArgException &e) {
@@ -97,17 +105,17 @@ int main(int argc, char *argv[]) {
   const std::vector<size_t> clusters( clustersArg.getValue() );
   const size_t burnin( burninArg.getValue() );
   const size_t iterations( iterationsArg.getValue() );
+  const int kMeansIterations{ kMeansIterationsArg.getValue() };
   int branchingOpt( branchingArg.getValue() );  
   //// Commandline parsing is done ////
 
   // Fixed parameters
-  const size_t kmeans_iterations{ 11 };
   const flann::flann_centers_init_t centers_init{ flann::FLANN_CENTERS_KMEANSPP };
 
   
   typedef float ElementType;
-  typedef WeightedEarthMoversDistance< ElementType > DistanceType;
-  typedef KMeansClusterer< DistanceType > ClustererType;
+  typedef WeightedEarthMoversDistance2 DistanceType;
+  typedef KMeansClusterer2< DistanceType > ClustererType;
   typedef typename ClustererType::MatrixType MatrixType;
   
   // Parse the data into a matrix
@@ -130,11 +138,9 @@ int main(int argc, char *argv[]) {
   const size_t histSize{ instances.cols()/nHistograms };
   
   // All histograms have equal weight
-  typedef DistanceType::FeatureWeightType FeatureWeightType;
-  std::vector< FeatureWeightType >
-    weights{ nHistograms, std::make_pair(histSize, 1.0) };
-      
-  DistanceType dist( weights ); 
+  std::vector< double > weights(nHistograms, 1.0);
+  
+  DistanceType dist( &weights[0], histSize ); 
 
   std::vector< double > measurements( iterations );
   std::vector< std::pair< double, double > > statistics;
@@ -145,7 +151,7 @@ int main(int argc, char *argv[]) {
     std::cout << "k = " << k << std::endl
 	      << "branching = " << branching << std::endl;
     
-    ClustererType clusterer( branching, kmeans_iterations, centers_init );
+    ClustererType clusterer( branching, kMeansIterations, centers_init );
 
     std::cout << "Burning " << burnin << " measurements."  << std::endl;    
     for ( size_t i = 0; i < burnin; ++i ) {
@@ -175,7 +181,7 @@ int main(int argc, char *argv[]) {
 	std::cerr << "Clusterer failed: " << e.what() << std::endl
 		  << "k " << k << std::endl
 		  << "branching " << branching << std::endl
-	  	  << "iterations " << kmeans_iterations << std::endl
+	  	  << "iterations " << kMeansIterations << std::endl
 		  << "i " << i << std::endl;
       }
     }

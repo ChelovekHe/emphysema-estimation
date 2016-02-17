@@ -52,35 +52,35 @@ def main():
 
     params = {
         'LungsLeftRight' : {
-            'title' : 'LungsLeftRight_stats.txt',
+            'title' : 'Labels are left/right lung',
             'labeldim' : '%0.4f' % -math.log(1.0/2),
         },
         'LungsInteriorBorder' : {
-            'title' : 'LungsInteriorBorder_stats.txt',
+            'title' : 'Labels are interior/border of lung',
             'labeldim' : '%0.4f' % -math.log(1.0/2),
         },
         'Regions' : {
-            'title' : 'Regions_stats.txt',
+            'title' : 'Labels are lung regions',
             'labeldim' : '%0.4f' % -math.log(1.0/6),
         },
         'Scans' : {
-            'title' : 'Scans_stats.txt',
+            'title' : 'Labels are scan id',
             'labeldim' : '%0.4f' % - math.log(1.0/10),
         },
         'GOLD' : {
-            'title' : 'GOLD_stats.txt',
+            'title' : 'Labels are GOLD stage',
             'labeldim' : '%0.4f' % - math.log(1.0/4),
         },
         'GOLD2' : {
-            'title' : 'GOLD2_stats.txt',
+            'title' : 'Labels are GOLD stage',
             'labeldim' : '%0.4f' % - math.log(1.0/4),
         },
         'COPD' : {
-            'title' : 'COPD_stats.txt',
+            'title' : 'Labels are COPD presence/absence',
             'labeldim' : '%0.4f' % - math.log(1.0/2),
         },
         'COPD2' : {
-            'title' : 'COPD2_stats.txt',
+            'title' : 'Labels are COPD presence/absence',
             'labeldim' : '%0.4f' % - math.log(1.0/2),
         },
     }

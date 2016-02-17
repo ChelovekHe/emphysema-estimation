@@ -25,11 +25,14 @@ PlotScalabilityStats <- function(inpath,outpath,title) {
 #             (stats$meanTime - stats$stddevTime)/1000,
  #            (stats$meanTime + stats$stddevTime)/1000)),
          xlab="Number of samples",
-         ylab="Averatge runtime in seconds",
+         ylab="Average runtime in seconds",
          main=title,
          xaxt="n",
+         cex.lab=1.7,
+         cex.axis=1.7,
+         cex.main=1.7
          );
-    axis(1, at=unique(stats$numSamples));
+    axis(1, at=unique(stats$numSamples), cex.axis=1 );
     i = 1;
     for ( k in ks ) {
         k.stats <- stats[stats$k == k,];
@@ -56,6 +59,7 @@ PlotScalabilityStats <- function(inpath,outpath,title) {
            title="Number of clusters",
            col=1:(length(ks)),
            lty=1,
+           cex=1.7,
            );
     dev.off();
 }

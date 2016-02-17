@@ -255,13 +255,13 @@ int main(int argc, char *argv[]) {
   );
 
   
-  std::string cmaesOutputPath = outputPath + "_cmaes_trace.dat";
+  std::string cmaesOutputPath = outputPath;
   ClusterModelTrainerParameters trainerParams(
     nHistograms,      // Feature space dimension
     k,                // Number of clusters
     maxIters,         // Maximum number of iterations of CMA-ES
     cmaesOutputPath,  // Path to trace file for CMA-ES
-    -1,               // Sigma for CMA-ES
+    0.5,               // Sigma for CMA-ES
     -1,               // Lambda for CMA-ES
     0,                // Random seed for CMA-ES
     false             // Toggle trace for trainer

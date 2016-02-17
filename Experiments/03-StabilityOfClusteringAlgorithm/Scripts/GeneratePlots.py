@@ -16,11 +16,10 @@ def main():
     }
 
     experiments =  [
-        'Stability-1',
-        'Stability-2',
-        'Stability-3',
-        'Stability-4',
-        'Stability-5'
+        'Stability-Thesis-1',
+        'Stability-Thesis-2',
+        'Stability-Thesis-3',
+        'Stability-Thesis-4',
     ]
         
     infilePattern = '%s_instances1000.csv'

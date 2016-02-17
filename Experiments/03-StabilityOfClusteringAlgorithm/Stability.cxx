@@ -8,8 +8,8 @@
 #include "tclap/CmdLine.h"
 
 #include "Hausdorff.h"
-#include "WeightedEarthMoversDistance.h"
-#include "KMeansClusterer.h"
+#include "WeightedEarthMoversDistance2.h"
+#include "KMeansClusterer2.h"
 #include "IO.h"
 
 const std::string VERSION = "1";
@@ -73,6 +73,14 @@ int main(int argc, char *argv[]) {
 	      "path", 
 	      cmd);
 
+  TCLAP::ValueArg<int> 
+    kMeansIterationsArg("I", 
+			"kmeans-iterations", 
+			"Iterations parameter to pass to flann",
+			false,
+			11,
+			">=2", 
+			cmd);
   
   try {
     cmd.parse(argc, argv);
@@ -87,15 +95,16 @@ int main(int argc, char *argv[]) {
   const std::string inputPath{ inputArg.getValue() };
   const size_t nHistograms{ nHistogramsArg.getValue() };
   const size_t nIterations{ nIterationsArg.getValue() };
-  const int branching{ branchingArg.getValue() };
+  const int branchingOpt{ branchingArg.getValue() };
+  const int kMeansIterations{ kMeansIterationsArg.getValue() };
   const std::vector<size_t> nClusters{ nClustersArg.getValue() };
   const std::string outputPath{ outputArg.getValue() };
   
   //// Commandline parsing is done ////
   
   typedef float ElementType;
-  typedef WeightedEarthMoversDistance< ElementType > DistanceType;
-  typedef KMeansClusterer< DistanceType > ClustererType;
+  typedef WeightedEarthMoversDistance2 DistanceType;
+  typedef KMeansClusterer2< DistanceType > ClustererType;
   typedef typename ClustererType::MatrixType MatrixType;
   
   // Parse the data into a matrix
@@ -113,7 +122,6 @@ int main(int argc, char *argv[]) {
   std::copy( buffer.cbegin(), buffer.cend(), instances.data() );
   
   // Fixed flann internal parameters
-  const size_t iterations = 11;
   const flann::flann_centers_init_t centers_init{ flann::FLANN_CENTERS_KMEANSPP };
 
   // We have equal sized histograms
@@ -126,11 +134,8 @@ int main(int argc, char *argv[]) {
 	    << "nBins " << nBins << std::endl;
   
   // All histograms have equal weight
-  typedef DistanceType::FeatureWeightType FeatureWeightType;
-  std::vector< FeatureWeightType >
-    weights{ nHistograms, std::make_pair(nBins, 1.0) };
-      
-  DistanceType dist( weights ); 
+  std::vector< double > weights(nHistograms, 1.0);      
+  DistanceType dist( &weights[0], nBins ); 
 
   // Prepare the outfile
   std::ofstream out( outputPath );
@@ -142,8 +147,10 @@ int main(int argc, char *argv[]) {
     std::cerr << "Could not write to file " << outputPath << std::endl;
     return EXIT_FAILURE;
   }
-  ClustererType clusterer( branching, iterations, centers_init );
+
   for ( const auto k : nClusters ) {
+    int branching = branchingOpt == 1 ? k : branchingOpt;
+    ClustererType clusterer( branching, kMeansIterations, centers_init );    
     std::cout << "Finding cluster centers:" << std::endl
 	      << "branching " << branching << std::endl
 	      << "k = " << k << std::endl;
