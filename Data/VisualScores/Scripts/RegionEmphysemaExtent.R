@@ -68,7 +68,7 @@ RegionEmphysemaExtent <- function(path, StIds=NULL) {
     regionExtent <- regionScores;
     regionExtent[ regionExtent == 0 ] = 0;
     regionExtent[ regionExtent == 1 ] = 0;
-    regionExtent[ regionExtent == 2 ] = 2.5;
+    regionExtent[ regionExtent == 2 ] = 3;
     regionExtent[ regionExtent == 3 ] = 15.5;
     regionExtent[ regionExtent == 4 ] = 38;
     regionExtent[ regionExtent == 5 ] = 63;
