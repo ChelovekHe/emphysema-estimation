@@ -8,14 +8,17 @@ set( GTEST_LIBRARIES
 set( LIBS
   ${ITK_LIBRARIES}
   ${GTEST_LIBRARIES}
+  ${CERES_LIBRARIES}
   )
 
 set( progs
+  ClusterLabellerTest
+  CrossValidatorTest
   DenseHistogramTest
+  DetermineEdgesForEqualizedHistogramTest
   EigenvaluesTest
   HausdorffTest
   WeightedEarthMoversDistanceTest
-  DetermineEdgesForEqualizedHistogramTest
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )

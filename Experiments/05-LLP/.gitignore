@@ -1,0 +1,5 @@
+*
+!.gitignore
+!*.cxx
+!Scripts/*
+!CMakeLists.txt

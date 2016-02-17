@@ -59,6 +59,18 @@ int main(int argc, char *argv[]) {
 	       "unsigned int", 
 	       cmd);
 
+
+  // Indicate which value of the mask indicates foreground
+  TCLAP::ValueArg<unsigned int> 
+    maskValueArg("M", 
+		 "mask-value", 
+		 "The value of the mask that is inside the region of interest.",
+		 false, 
+		 1, 
+		 "unsigned int", 
+		 cmd);
+
+  
   
   try {
     cmd.parse(argc, argv);
@@ -74,6 +86,7 @@ int main(int argc, char *argv[]) {
   std::string outFilePath( outFileArg.getValue() );
   unsigned int nROIs( nROIsArg.getValue() );
   unsigned int roiSize( roiSizeArg.getValue() );
+  unsigned int maskValue( maskValueArg.getValue() );
 
   //// Commandline parsing is done ////
 
@@ -131,7 +144,7 @@ int main(int argc, char *argv[]) {
     for ( maskIterator.GoToBegin();
 	  !maskIterator.IsAtEnd() && nROI < nROIs;
 	  ++maskIterator ) {
-      if ( maskIterator.Get() == 1 ) {
+      if ( maskIterator.Get() == maskValue ) {
 	// We try to sample this location. The location is the center of the ROI
 	// so we need to offset it by half the size
 	MaskImageType::IndexType center = maskIterator.GetIndex();

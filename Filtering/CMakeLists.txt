@@ -6,6 +6,7 @@ set( LIBS
 
 set( progs
   TryingHessian3DImageFilter
+  BinarizeImage
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )

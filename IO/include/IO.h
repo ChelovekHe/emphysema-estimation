@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <limits>
 
 #include "String.h"
 
@@ -63,12 +64,12 @@ void
 readTextSequence( std::istream& is,
 		  OutputIt out,
 		  CharT sep=',' ) {
+  const std::streamsize count = std::numeric_limits<std::streamsize>::max();
   std::basic_string< CharT > s;
   ElemT elem;
-  while ( is.good() ) {
-    std::getline( is, s, sep );
-    std::basic_istringstream< CharT >(s) >> elem;
+  while ( (is >> elem) ) {
     *out++ = elem;
+    is.ignore( count, sep );
   }
 }
 

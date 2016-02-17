@@ -1,5 +1,5 @@
-#ifndef __Clustering_h
-#define __Clustering_h
+#ifndef __KMeansClusterer_h
+#define __KMeansClusterer_h
 
 #include <vector>
 #include <cassert>
@@ -7,65 +7,73 @@
 #include "flann/flann.hpp"
 #include "Eigen/Dense"
 
-template< typename Distance >
+template< typename MatrixType, typename VectorType >
+struct ClusteringResult {
+  ClusteringResult() : centers(), indices(), distances() {}
+  ClusteringResult(MatrixType _centers,
+		   VectorType _indices,
+		   MatrixType _distances )
+    : centers(_centers), indices(_indices), distances(_distances) {}
+  MatrixType centers;
+  VectorType indices;
+  MatrixType distances;
+};
+
+
+template< typename TDistanceFunctor >
 class KMeansClusterer {
 public:
-  typedef typename Distance::ElementType ElementType;
-  typedef Eigen::Matrix<ElementType, Eigen::Dynamic, Eigen::Dynamic> MatrixType;
+  typedef TDistanceFunctor DistanceFunctorType;
+  typedef typename DistanceFunctorType::ElementType ElementType;
+  typedef Eigen::Matrix<ElementType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixType;
+  typedef std::vector<int> IndexVectorType;
+  typedef ClusteringResult< MatrixType, IndexVectorType > ResultType;
   
-  // The number of cluster will be at most nClusters.
-  // If exactly nClusters are needed, then make sure that branching and nClusters
-  // satisfy
-  // (branching - 1) * k + 1 = nCLusters, for k >= 0
-  // e.g. (16 - 1) * 1 + 1 = 16
-  //      (32 - 1) * 2 + 1 = 63
-  // Branching should probably be some power of 2
-  KMeansClusterer( size_t nClusters,
-		   size_t nFeatures,
-		   // Flann parameters with defaults from flann
-		   int branching=32, 
-		   int iterations=11,
-		   flann::flann_centers_init_t centers_init=flann::FLANN_CENTERS_RANDOM,
-		   float cb_index=0.2 )
-    : m_NClusters( nClusters ),
-      m_NFeatures( nFeatures ),
-      m_CentersBuffer( nClusters * nFeatures ),
-      m_Params( branching, iterations, centers_init, cb_index )
-  { }
+  KMeansClusterer(int branching=32,
+		  int iterations=11,
+		  flann::flann_centers_init_t centersInit=flann::FLANN_CENTERS_KMEANSPP,
+		  float cbIndex=0.2);
+  ~KMeansClusterer() {};
 
-  // void setIterations( int iterations ) {
-  //   assert( iterations >= 0 );
-  //   m_Params["iterations"] = iterations;
-  // }
-
-  // void setBranching( int branching ) {
-  //   assert( branching >= 0 );
-  //   m_Params["branching"] = branching;
-  // }
-
-
-  MatrixType
-  cluster( MatrixType& instances, Distance& dist ) {
-    InternalMatrixType _instances( instances.data(), instances.rows(), instances.cols());
-    InternalMatrixType _centers( &m_CentersBuffer[0], m_NClusters, m_NFeatures );
-    int nActualClusters =
-      flann::hierarchicalClustering< Distance >( _instances, _centers, m_Params, dist );
-    assert( nActualClusters > 0 );
-
-    // Copy the centers to a new matrix
-    auto rows = nActualClusters;
-    auto cols = m_NFeatures;
-    MatrixType centers(rows, cols);
-    std::copy( _centers.ptr(), _centers.ptr() + rows*cols, centers.data() );
-    return centers;
+  // Cluster instances into at most requestedK clusters using dist to
+  // calculate distances. The actual number of clusters depends on the
+  // branching factor
+  ResultType cluster( const MatrixType& instances,
+		      DistanceFunctorType& dist,
+		      size_t requestedK );
+  
+  
+  // Set/Get parameters
+  void setBranching( int branching ) {
+    assert( branching > 1 );
+    m_Branching = branching;
   }
-    
+  int getBranching( ) const { return m_Branching; }
+
+  void setIterations( int iterations ) {
+    assert( iterations >= 0 );
+    m_Iterations = iterations;
+  }
+  int getIterations( ) const { return m_Iterations; }
+
+  void setCentersInit( flann::flann_centers_init_t centersInit ) {
+    m_CentersInit = centersInit;
+  }
+  flann::flann_centers_init_t getCentersInit() {
+    return m_CentersInit;
+  }
+
+
 private:
   typedef flann::Matrix<ElementType> InternalMatrixType;
-  const size_t m_NClusters;
-  const size_t m_NFeatures;
-  std::vector< ElementType > m_CentersBuffer;
-  flann::KMeansIndexParams m_Params;
+  typedef flann::Matrix<int> InternalIndexVectorType;
+  int m_Branching;
+  int m_Iterations;
+  flann::flann_centers_init_t m_CentersInit;
+  float m_CbIndex;
 };
+
+
+#include "KMeansClusterer.hxx"
 
 #endif

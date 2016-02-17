@@ -6,6 +6,8 @@ set( progs
   FiniteDifference_HessianFeatures
   FiniteDifference_GradientFeatures
   ExtractFeatures
+  ExtractLabels
+  ExtractMaskedRegion
   MakeBag
   )
 foreach( prog ${progs} )

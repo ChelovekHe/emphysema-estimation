@@ -12,6 +12,8 @@ set( progs
   MaskedImageHistogram
   ComputeJointHistogram
   CheckEigenvalues
+  CalculateROIRA
+  CalculateRegionRA
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
