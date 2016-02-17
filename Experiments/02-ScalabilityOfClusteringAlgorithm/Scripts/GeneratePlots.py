@@ -2,11 +2,7 @@
 import sys, os, os.path, subprocess, math, csv, random
 from Util import intersperse 
 
-def main():
-    skip = {
-        'Make plots' : False,
-    }
-        
+def main():       
     basedir = './'
 
     dirs = {
@@ -17,13 +13,21 @@ def main():
     }
     
     files = {
-        'Scalability-1' : {
-            'infile' : os.path.join(dirs['Statistics'], 'Scalability-1', 'runtime_stats.csv'),
-            'outfile' : os.path.join(dirs['Plots'], 'Scalability-1_Runtime.ps'),
+        'Scalability-Thesis-1' : {
+            'infile' : os.path.join(dirs['Statistics'], 'Scalability-Thesis', 'Scalability-Thesis-1_stats.csv'),
+            'outfile' : os.path.join(dirs['Plots'], 'Scalability-Thesis-1.ps'),
         },
-        'Scalability-2' : {
-            'infile' : os.path.join(dirs['Statistics'], 'Scalability-2', 'runtime_stats.csv'),
-        'outfile' : os.path.join(dirs['Plots'], 'Scalability-2_Runtime.ps'),
+        'Scalability-Thesis-2' : {
+            'infile' : os.path.join(dirs['Statistics'], 'Scalability-Thesis', 'Scalability-Thesis-2_stats.csv'),
+            'outfile' : os.path.join(dirs['Plots'], 'Scalability-Thesis-2.ps'),
+        },
+        'Scalability-Thesis-3' : {
+            'infile' : os.path.join(dirs['Statistics'], 'Scalability-Thesis', 'Scalability-Thesis-3_stats.csv'),
+            'outfile' : os.path.join(dirs['Plots'], 'Scalability-Thesis-3.ps'),
+        },
+        'Scalability-Thesis-4' : {
+            'infile' : os.path.join(dirs['Statistics'], 'Scalability-Thesis', 'Scalability-Thesis-4_stats.csv'),
+            'outfile' : os.path.join(dirs['Plots'], 'Scalability-Thesis-4.ps'),
         },
     }
     
@@ -32,15 +36,28 @@ def main():
     }
 
     params = {
-        'Scalability-1' : {
-            'title' : "Scalability of k-means. Each measurement is averaged over 100 runs. 56 histograms with 41 bins",
+        'Scalability-Thesis-1' : {
+            'title' : "Scalability of k-means. Branching = 2, k-means iterations = 11, runs = 100.",
         },
-        'Scalability-2' : {
-            'title' : "Scalability of k-means. Branching = 16, 100 runs, 56 histograms, 41 bins",
+        'Scalability-Thesis-2' : {
+            'title' : "Scalability of k-means. Branching = k, k-means iterations = 11, runs = 100.",
+        },
+        'Scalability-Thesis-3' : {
+            'title' : "Scalability of k-means. Branching = 2, k-means iterations = -1, runs = 100.",
+        },
+        'Scalability-Thesis-4' : {
+            'title' : "Scalability of k-means. Branching = k, k-means iterations = -1, runs = 100.",
         },
     }
 
-    for ex in ['Scalability-1', 'Scalability-2']:
+    experiments = [
+        'Scalability-Thesis-1',
+        'Scalability-Thesis-2',
+        'Scalability-Thesis-3',
+        'Scalability-Thesis-4',
+    ]
+    
+    for ex in experiments:
         print( 'Making', ex, 'plot' )
         args = [
             progs['PlotScalabilityStats'],
