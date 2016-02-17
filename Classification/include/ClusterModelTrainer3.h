@@ -51,7 +51,8 @@ public:
     : m_Clusterer( clusterer ),
       m_Labeller( labeller ),
       m_Params( params ),
-      m_Trace( )
+      m_Trace( ),
+      m_Counter( )
   { }
   
 
@@ -82,6 +83,8 @@ private:
   LabellerType& m_Labeller;
   ClusterModelTrainerParameters& m_Params;
   Trace m_Trace;
+  int m_Counter; // Counter for generating trace file names that are unique
+                 // for the objects life time.
 };
 
 
@@ -115,7 +118,10 @@ ClusterModelTrainer3< TClusterer, TLabeller >
   }
 
   if ( !m_Params.out.empty() ) {
-    cmaParams.set_fplot( m_Params.out );
+    ++m_Counter;
+    std::string tracefile = m_Params.out + "_cmaes_trace_" + std::to_string( m_Counter ) + ".dat";
+    std::cout << "Tracing to " << tracefile << std::endl;
+    cmaParams.set_fplot( tracefile );
   }
   
   // Define and wrap the objective for cmaes
@@ -207,6 +213,18 @@ ClusterModelTrainer3< TClusterer, TLabeller >
     }
   }
 
+  // Store the model if we have an output file
+  if ( !m_Params.out.empty() ) {
+    std::string modelFile = m_Params.out + "_" + std::to_string( m_Counter ) + ".model";
+    std::ofstream o( modelFile );
+    if ( o.good() ) {
+      o << cm;
+    }
+    else {
+      std::cerr << "Error writing model to " << modelFile << std::endl;
+    }
+  }
+  
   cm.build();
   
   return bestLoss;

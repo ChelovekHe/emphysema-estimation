@@ -24,6 +24,9 @@ public:
   typedef double ElementType;
   typedef TDistanceFunctor DistanceFunctorType;
 
+  template< typename T >
+  friend std::ostream& operator<<(std::ostream& os, const ClusterModel<T>& obj);
+  
   ClusterModel( )
     : m_Centers(  ),
       m_Labels(  ),
@@ -139,5 +142,14 @@ private:
   std::unique_ptr<IndexType> m_Index;
   std::unique_ptr<InternalMatrixType> m_InternalCenters;    
 };
+
+template< typename TDistanceFunctor >
+std::ostream& operator<<(std::ostream& os, const ClusterModel<TDistanceFunctor>& obj) {
+  os << obj.m_Weights << std::endl;
+  for ( std::size_t i = 0; i < obj.m_Centers.rows(); ++i ) {
+    os << obj.m_Labels(i) << "\t" << obj.m_Centers.row(i) << "\n";
+  }
+  return os;
+}
 
 #endif
