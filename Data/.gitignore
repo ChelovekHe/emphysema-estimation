@@ -1,2 +1,4 @@
-*
-!.gitignore
+Dataset-*
+GOLD
+Scans*
+UCSB*
