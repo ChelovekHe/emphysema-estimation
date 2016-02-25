@@ -11,6 +11,7 @@ set( LIBS
 
 set( progs 
   BoundaryEffects
+  MakePatchMask
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )

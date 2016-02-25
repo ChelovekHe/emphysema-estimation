@@ -1,12 +1,18 @@
 project( EE_Classification )
 
 set( LIBS
+  ${ITK_LIBRARIES}
   ${CERES_LIBRARIES}
   ${CMAES_LIBRARIES}
+  IO
+  String
   )
 
 set( progs
   ClusterModelTrainerTest
+  TrainClusterModelContinuous
+  TrainClusterModelBinary
+  PredictClusterModel
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )

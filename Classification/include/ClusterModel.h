@@ -8,6 +8,10 @@
  */
 
 #include <memory>
+#include <limits>
+#include <istream>
+#include <ostream>
+#include <ios>
 
 #include "flann/flann.hpp"
 
@@ -145,11 +149,60 @@ private:
 
 template< typename TDistanceFunctor >
 std::ostream& operator<<(std::ostream& os, const ClusterModel<TDistanceFunctor>& obj) {
-  os << obj.m_Weights << std::endl;
-  for ( std::size_t i = 0; i < obj.m_Centers.rows(); ++i ) {
-    os << obj.m_Labels(i) << "\t" << obj.m_Centers.row(i) << "\n";
-  }
+  os << "# number of weights   number of clusters   dimension of feature space" << std::endl
+     << obj.m_Weights.size() << "   " 
+     << obj.m_Centers.rows() << "   "
+     << obj.m_Centers.cols() << std::endl
+     << obj.m_Weights << std::endl
+     << obj.m_Labels << std::endl
+     << obj.m_Centers;
   return os;
 }
+
+template< typename TDistanceFunctor >
+std::istream& operator>>(std::istream& is, ClusterModel<TDistanceFunctor>& obj) {
+  char c;
+  is >> c;
+  if ( c != '#' ) {
+    is.setstate( std::ios::failbit );
+    return is;
+  }
+  // Skip the line
+  is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  
+  std::size_t nWeights, nClusters, nFeatures;
+  is >> nWeights >> nClusters >> nFeatures;
+  if ( !is || nWeights > nFeatures ) {
+    is.setstate( std::ios::failbit );
+    return is;
+  }
+  
+  typedef ClusterModel<TDistanceFunctor> ModelType;
+  typename ModelType::VectorType weights( nWeights ), labels( nClusters );
+  typename ModelType::MatrixType centers( nClusters, nFeatures );
+
+  for ( std::size_t i = 0; i < nWeights; ++i ) {
+    is >> weights(i);
+  }
+  
+  for ( std::size_t i = 0; i < nClusters; ++i ) {
+    is >> labels(i);
+  }
+
+  for ( std::size_t i = 0; i < nClusters; ++i ) {
+    for ( std::size_t j = 0; j < nFeatures; ++j ) {
+      is >> centers(i,j);
+    }
+  }
+
+  obj.weights() = weights;
+  obj.setLabels( labels );
+  obj.setCenters( centers );
+  obj.build();
+  
+  return is;
+}
+
+
 
 #endif
