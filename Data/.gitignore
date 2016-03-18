@@ -2,3 +2,5 @@ Dataset-*
 GOLD
 Scans*
 UCSB*
+CombinedTrainingValidation
+*.txt
