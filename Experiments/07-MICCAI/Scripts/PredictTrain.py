@@ -18,40 +18,30 @@ def main(argv=None):
         print( 'usage: prog <experiment number>' )
         return 1
     
-    progs = {
-        'Continuous' : '../../Build/Classification/TrainClusterModelContinuous',
-        'Binary' : '../../Build/Classification/TrainClusterModelBinary',
-    }
+    prog = '../../Build/Classification/PredictClusterModel'
 
     labels = {
         'COPD' : '../../Data/Training/Labels/COPD.csv',
         'EmphysemaExtentLung' : '../../Data/Training/Labels/EmphysemaExtentLung.csv',
     }
 
-    instances = '../../Data/Training/RegionBagsInstances.csv'
-    bagMembership = '../../Data/Training/RegionBagMembership.csv'
-    
+    instances = '../../Data/Training/Instances.csv'
+    bagMembership = '../../Data/Training/BagMembership.csv'
+
+    modelPattern = "Out/Training/MaxIterations1000/%s_%s_k%s_1.model"
+    numberOfClusters = ['5', '10', '20', ]#'15', '20', ]#'25', '30']
     params = {
-        'k' : ['15', '5'], #['5', '10', '15', '20', '25', '30'],
         'histograms' : '24',
-        'max-iterations' : '1000',
-        'branching' : '2',
-        'kmeans-iterations' : '25',
     }
-            
-    
-    for k in params['k']:
-        out = 'Out/Training/RegionBags/%s_%s_k%s' % (experiment + (k,))
+
+    for k in numberOfClusters:
+        out = 'Out/Training/MaxIterations1000/%s_%s_k%s_' % (experiment + (k,))
         cmd = [
-            progs[experiment[0]], 
+            prog,
             "--instances", instances,
             '--bag-membership', bagMembership,
-            "--bag-labels", labels[experiment[1]],
-            "--clusters", k,
+            '--model', modelPattern % (experiment + (k,)),
             "--histograms", params['histograms'],
-            "--branching", params['branching'],
-            "--kmeans-iterations", params['kmeans-iterations'],
-            "--max-iterations", params['max-iterations'],
             "--output",  out,
         ]
         print( ' '.join( cmd ) )
