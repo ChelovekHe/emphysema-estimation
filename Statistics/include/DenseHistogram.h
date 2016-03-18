@@ -59,6 +59,10 @@ public:
   void resetCounts() {
     std::fill(m_Counts.begin(), m_Counts.end(), 0);
   }
+
+  std::size_t getNumberOfBins() const {
+    return m_Counts.size();
+  }
   
   // template <class CharT, class Traits>
   // std::basic_ostream<CharT, Traits>&

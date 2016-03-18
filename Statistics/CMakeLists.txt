@@ -9,6 +9,7 @@ set( LIBS
 set( progs 
   DetermineHistogramBinWidtsFromPopulation
   DetermineHistogramBinEdges
+  DetermineHistogramBinEdgesOnlyIntensity
   MaskedImageHistogram
   ComputeJointHistogram
   CheckEigenvalues
