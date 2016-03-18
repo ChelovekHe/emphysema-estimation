@@ -8,11 +8,7 @@ main <- function(options) {
         quit( status = 1 );
     }
     StIds <- GetStIds( options[2] );
-    regionExtent <- RegionEmphysemaExtent( options[1], StIds );
-    write.csv(regionExtent,
-              file=options[3],
-              quote=FALSE,
-              row.names=FALSE);
+    RegionEmphysemaExtent( options[1], StIds, options[3] );
     quit( status = 0 );
 }
 
@@ -21,7 +17,7 @@ GetStIds <- function( path ) {
     StIdsAndDates[,1];
 }
 
-RegionEmphysemaExtent <- function(path, StIds=NULL) {
+RegionEmphysemaExtent <- function(path, StIds=NULL, outpath) {
     scores <- read.csv(path, header=TRUE);
 
     ## If we are given a set of study ids, then we only use those studies
@@ -46,12 +42,8 @@ RegionEmphysemaExtent <- function(path, StIds=NULL) {
     ##   ELM : Emphysema Left Middle
     ##   ELL : Emphysema Left Lower
     ##
-    regionScores <- scores[,c("ERU.L1", "ERU.M1",
-                              "ERM.L1", "ERM.M1",
-                              "ERL.L1", "ERL.M1",
-                              "ELU.L1", "ELU.M1",
-                              "ELM.L1", "ELM.M1",
-                              "ELL.L1", "ELL.M1")];
+    extent <- scores[,c("ERU.L1", "ERM.L1", "ERL.L1", "ELU.L1", "ELM.L1", "ELL.L1",
+                        "ERU.M1", "ERM.M1", "ERL.M1", "ELU.M1", "ELM.M1", "ELL.M1") ]
 
     ## The region scores are given as a value from zero to six.
     ## The values correspond to percentage intervals indicating the extent
@@ -64,29 +56,13 @@ RegionEmphysemaExtent <- function(path, StIds=NULL) {
     ## 5 : 51-75%
     ## 6 : 76-100%
     ##
-    ## We convert the categories to the midpoints of the intervals    
-    regionExtent <- regionScores;
-    regionExtent[ regionScores == 0 ] = 0;
-    regionExtent[ regionScores == 1 ] = 0;
-    regionExtent[ regionScores == 2 ] = 3;
-    regionExtent[ regionScores == 3 ] = 15.5;
-    regionExtent[ regionScores == 4 ] = 38;
-    regionExtent[ regionScores == 5 ] = 63;
-    regionExtent[ regionScores == 6 ] = 88;
-
-    print( regionExtent[2,] )
-    
-    ## We want values in [0,1]
-    regionExtent <- regionExtent / 100;
-    avgRegionExtent <-
-        (regionExtent[, c(1,3,5,7,9,11)] + regionExtent[, c(2,4,6,8,10,12)]) / 2;
-    colnames( avgRegionExtent ) <- c("ERU", "ERM", "ERL",
-                                     "ELU", "ELM", "ELL");
-    print( avgRegionExtent[2,] )
-
-    list(StudyId=scores$StId,
-         Date=scores$Dato.1,
-         RegionEmphysemaExtent=avgRegionExtent);
+    ## We convert 0 to 1 and leave the remaining as is
+    ##    extent[ extent == 0 ] <- 1;
+    write.csv(list(IdDate=paste(scores$StId, gsub("-", "", scores$Dato.1), sep='_'),
+                   extent),
+              file=outpath, 
+              quote=FALSE,
+              row.names=FALSE);
 }
 
 options <- commandArgs(trailingOnly=TRUE);
