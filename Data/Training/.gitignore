@@ -1,2 +1,7 @@
 *.csv
 *.txt
+*.tar.gz
+*.pdf
+RegionBags
+ROIs
+PatchSize21mm
