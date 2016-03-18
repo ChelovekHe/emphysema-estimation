@@ -9,6 +9,7 @@ set( progs
   ExtractLabels
   ExtractMaskedRegion
   MakeBag
+  MakeBagOnlyIntensity
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
