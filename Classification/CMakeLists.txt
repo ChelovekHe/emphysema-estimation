@@ -12,7 +12,9 @@ set( progs
   ClusterModelTrainerTest
   TrainClusterModelContinuous
   TrainClusterModelBinary
+  TrainClusterModelIntervals
   PredictClusterModel
+  PredictInstancesCMS
   )
 foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
