@@ -28,20 +28,20 @@ def main(argv=None):
         'EmphysemaExtentLung' : '../../Data/Training/Labels/EmphysemaExtentLung.csv',
     }
 
-    instances = '../../Data/Training/Instances.csv'
-    bagMembership = '../../Data/Training/BagMembership.csv'
+    instances = '../../Data/Training/RegionBagsInstances.csv'
+    bagMembership = '../../Data/Training/RegionBagMembership.csv'
     
     params = {
-        'k' : ['5', '10', '15', '20', '25', '30'],
+        'k' : ['15', '5'], #['5', '10', '15', '20', '25', '30'],
         'histograms' : '24',
-        'max-iterations' : '100',
+        'max-iterations' : '1000',
         'branching' : '2',
         'kmeans-iterations' : '25',
     }
             
     
     for k in params['k']:
-        out = 'Out/Training/%s_%s_k%s' % (experiment + (k,))
+        out = 'Out/Training/RegionBags/%s_%s_k%s' % (experiment + (k,))
         cmd = [
             progs[experiment[0]], 
             "--instances", instances,

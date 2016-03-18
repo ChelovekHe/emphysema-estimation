@@ -50,6 +50,19 @@ public:
   label( const VectorType& p,
 	 const MatrixType& C,
 	 VectorType& x ) const override;
+
+  /*
+    @param I  The known interval of label proportions for bags
+    @param C  Mapping from cluster labels to bag labels
+    @param x  \in {0,1}^n. Starting point for the optimization
+              The optimal labelling is stored in x.
+
+    @return   Objective value at optimal x
+   */
+  double
+  label( const MatrixType& I,
+	 const MatrixType& C,
+	 VectorType& x ) const;
 };
 
 #include "GreedyBinaryClusterLabeller.hxx"

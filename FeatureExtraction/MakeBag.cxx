@@ -103,6 +103,15 @@ int main(int argc, char *argv[]) {
 	   "path", 
 	   cmd);
 
+  TCLAP::ValueArg<bool>
+    roiHasHeaderArg("R",
+		    "roi-file-has-header",
+		    "Flag indicating if the ROI file has a header",
+		    false,
+		    true,
+		    "boolean",
+		    cmd);
+  
   TCLAP::ValueArg<std::string> 
     roiMaskArg("M", 
 	       "roi-mask", 
@@ -188,6 +197,7 @@ int main(int argc, char *argv[]) {
 
   // Optional
   const std::string roiPath( roiArg.getValue() );
+  const bool roiHasHeader( roiHasHeaderArg.getValue() );
   const std::string roiMaskPath( roiMaskArg.getValue() );
   const MaskPixelType roiMaskValue( roiMaskValueArg.getValue() );
   const size_t numROIs( numROIsArg.getValue() );
@@ -296,7 +306,7 @@ int main(int argc, char *argv[]) {
     // Read the roi specification
     typedef ROIReader< RegionType > ROIReaderType;
     try {
-      rois = ROIReaderType::read( roiPath );
+      rois = ROIReaderType::read( roiPath, roiHasHeader );
       std::cout << "Got " << rois.size() << " rois." << std::endl;
     }
     catch ( std::exception &e ) {

@@ -66,21 +66,24 @@ RegionEmphysemaExtent <- function(path, StIds=NULL) {
     ##
     ## We convert the categories to the midpoints of the intervals    
     regionExtent <- regionScores;
-    regionExtent[ regionExtent == 0 ] = 0;
-    regionExtent[ regionExtent == 1 ] = 0;
-    regionExtent[ regionExtent == 2 ] = 3;
-    regionExtent[ regionExtent == 3 ] = 15.5;
-    regionExtent[ regionExtent == 4 ] = 38;
-    regionExtent[ regionExtent == 5 ] = 63;
-    regionExtent[ regionExtent == 6 ] = 88;
+    regionExtent[ regionScores == 0 ] = 0;
+    regionExtent[ regionScores == 1 ] = 0;
+    regionExtent[ regionScores == 2 ] = 3;
+    regionExtent[ regionScores == 3 ] = 15.5;
+    regionExtent[ regionScores == 4 ] = 38;
+    regionExtent[ regionScores == 5 ] = 63;
+    regionExtent[ regionScores == 6 ] = 88;
 
+    print( regionExtent[2,] )
+    
     ## We want values in [0,1]
     regionExtent <- regionExtent / 100;
     avgRegionExtent <-
         (regionExtent[, c(1,3,5,7,9,11)] + regionExtent[, c(2,4,6,8,10,12)]) / 2;
     colnames( avgRegionExtent ) <- c("ERU", "ERM", "ERL",
                                      "ELU", "ELM", "ELL");
-    
+    print( avgRegionExtent[2,] )
+
     list(StudyId=scores$StId,
          Date=scores$Dato.1,
          RegionEmphysemaExtent=avgRegionExtent);

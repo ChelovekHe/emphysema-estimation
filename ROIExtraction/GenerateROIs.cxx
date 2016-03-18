@@ -8,16 +8,15 @@
 #include "tclap/CmdLine.h"
 
 #include "itkImageFileReader.h"
-#include "itkImageRandomConstIteratorWithIndex.h"
+#include "itkBinaryThresholdImageFilter.h"
 
-#include "Path.h"
+#include "RegionOfInterestGenerator.h"
 
-const std::string VERSION("0.1");
-const std::string OUT_FILE_TYPE(".txt");
+const std::string VERSION("0.2");
 
 int main(int argc, char *argv[]) {
   // Commandline parsing
-  TCLAP::CmdLine cmd("Generate cubic ROIs.", ' ', VERSION);
+  TCLAP::CmdLine cmd("Generate 3D ROIs.", ' ', VERSION);
 
   // We need a single mask
   TCLAP::ValueArg<std::string> 
@@ -41,23 +40,41 @@ int main(int argc, char *argv[]) {
   
   // We need a number of ROIs to sample
   TCLAP::ValueArg<unsigned int> 
-    nROIsArg("n", 
-	     "num-rois", 
-	     "Number of ROIs to sample",
-	     false, 
-	     50, 
-	     "unsigned int", 
-	     cmd);
-
-  // We need the size of the ROIs
-  TCLAP::ValueArg<unsigned int> 
-    roiSizeArg("s", 
-	       "roi-size", 
-	       "Size of the ROIs. All ROIs are cubes (s x s x s).",
+    numROIsArg("n", 
+	       "num-rois", 
+	       "Number of ROIs to sample",
 	       false, 
-	       41, 
+	       50, 
 	       "unsigned int", 
 	       cmd);
+
+  // We need the size of the ROIs
+  TCLAP::ValueArg<size_t> 
+    roiSizeXArg("x", 
+		"roi-size-x", 
+		"Size of ROI in x dimension",
+		false,
+		53,
+		"N>=1", 
+		cmd);
+
+    TCLAP::ValueArg<size_t> 
+    roiSizeYArg("y", 
+		"roi-size-y", 
+		"Size of ROI in y dimension",
+		false,
+		53,
+		"N>=1", 
+		cmd);
+
+    TCLAP::ValueArg<size_t> 
+    roiSizeZArg("z", 
+		"roi-size-z", 
+		"Size of ROI in z dimension",
+		false,
+		41,
+		"N>=1", 
+		cmd);
 
 
   // Indicate which value of the mask indicates foreground
@@ -68,9 +85,7 @@ int main(int argc, char *argv[]) {
 		 false, 
 		 1, 
 		 "unsigned int", 
-		 cmd);
-
-  
+		 cmd);  
   
   try {
     cmd.parse(argc, argv);
@@ -82,12 +97,20 @@ int main(int argc, char *argv[]) {
   }
 
   // Store the arguments
-  std::string maskPath( maskArg.getValue() );
-  std::string outFilePath( outFileArg.getValue() );
-  unsigned int nROIs( nROIsArg.getValue() );
-  unsigned int roiSize( roiSizeArg.getValue() );
-  unsigned int maskValue( maskValueArg.getValue() );
+  const std::string maskPath( maskArg.getValue() );
+  const std::string outFilePath( outFileArg.getValue() );
+  const unsigned int numROIs( numROIsArg.getValue() );
+  const size_t roiSizeX = roiSizeXArg.getValue();
+  const size_t roiSizeY = roiSizeYArg.getValue();
+  const size_t roiSizeZ = roiSizeZArg.getValue();
+  const unsigned int maskValue( maskValueArg.getValue() );
 
+  // Check parameters
+  assert( numROIs > 0 );
+  assert( roiSizeX > 0 );
+  assert( roiSizeY > 0 );
+  assert( roiSizeZ > 0 );
+  
   //// Commandline parsing is done ////
 
 
@@ -112,71 +135,42 @@ int main(int argc, char *argv[]) {
 	      << "ExceptionObject: " << e << std::endl;
     return EXIT_FAILURE;
   }
- 
-  // Setup the region. We know the size but start index is set in the loop
-  assert( roiSize > 0 );
-  MaskImageType::SizeType size;
-  size.Fill( roiSize );
-  MaskImageType::RegionType roi;
-  roi.SetSize( size );
+
+  // Setup a filter that can extract the requested region from the mask
+  typedef itk::BinaryThresholdImageFilter<
+    MaskImageType,
+    MaskImageType > RoiThresholdFilterType;
+  RoiThresholdFilterType::Pointer roiThresholdFilter = RoiThresholdFilterType::New();
+  roiThresholdFilter->SetLowerThreshold( maskValue );
+  roiThresholdFilter->SetUpperThreshold( maskValue );
+  roiThresholdFilter->SetInsideValue( 1 );
+  roiThresholdFilter->SetOutsideValue( 0 );
+  roiThresholdFilter->SetInput( maskReader->GetOutput() ); 
 
 
-  // Setup the random iterator that walks the mask image
-  typedef itk::ImageRandomConstIteratorWithIndex< MaskImageType >
-    RandomIteratorType;
-  RandomIteratorType
-    maskIterator( maskReader->GetOutput(),
-		  maskReader->GetOutput()->GetLargestPossibleRegion() );
-  
-  // We want one sample for each ROI
-  maskIterator.SetNumberOfSamples( nROIs );
+  // Setup the ROI generator 
+  typedef itk::RegionOfInterestGenerator< MaskImageType > ROIGeneratorType;    
+  ROIGeneratorType roiGenerator( roiThresholdFilter->GetOutput() );
+  MaskImageType::SizeType roiSize{ roiSizeX, roiSizeY, roiSizeZ };
 
-  // We need to store the ROI start index
-  std::vector< MaskImageType::IndexType > start;
-  start.reserve( nROIs );
+  try {
+    auto rois = roiGenerator.generate( numROIs, roiSize );
 
-  // We need the image size so we can test that all ROIs are inside the image
-  auto imageSize =
-    maskReader->GetOutput()->GetLargestPossibleRegion().GetSize();
-  
-  // Run the ROI sampling loop  
-  for ( unsigned int nROI = 0; nROI < nROIs;  ) {
-    for ( maskIterator.GoToBegin();
-	  !maskIterator.IsAtEnd() && nROI < nROIs;
-	  ++maskIterator ) {
-      if ( maskIterator.Get() == maskValue ) {
-	// We try to sample this location. The location is the center of the ROI
-	// so we need to offset it by half the size
-	MaskImageType::IndexType center = maskIterator.GetIndex();
-	center[0] -= size[0]/2;
-	center[1] -= size[1]/2;
-	center[2] -= size[2]/2;
-	if ( center[0] + size[0] < imageSize[0] &&
-	     center[1] + size[1] < imageSize[1] &&
-	     center[2] + size[2] < imageSize[2] ) {
-	  // Now we are happy and choose this as a sample.
-	  start.push_back( center );
-	  ++nROI;
-	}
-      }
+    // Store the generated ROIs
+    std::ofstream out( outFilePath );
+    for ( auto roi : rois ) {
+      out << roi.GetIndex() << roi.GetSize() << '\n';
+    }
+    if ( !out.good() ) {
+      std::cerr << "Error writing ROI info file" << std::endl;
+      return EXIT_FAILURE;
     }
   }
-
-
-  // Write the ROI info
-  std::ofstream out( outFilePath );
-  if ( out.good() ) {
-    out << "ROI, start, size" << std::endl;
-  }
-  for ( unsigned int i = 0; i < start.size(); ++i ) {
-    if ( out.good() ) {
-      out << i << ", " << start[i] << ", " << size << std::endl;
-    }
-  }
-  if ( !out.good() ) {
-    std::cerr << "Error writing ROI info file" << std::endl;
+  catch ( itk::ExceptionObject &e ) {
+    std::cerr << "Failed to generate ROIs." << std::endl       
+	      << "ExceptionObject: " << e << std::endl;
     return EXIT_FAILURE;
   }
-  
+
   return EXIT_SUCCESS;
 }

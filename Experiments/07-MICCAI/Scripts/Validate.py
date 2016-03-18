@@ -28,14 +28,14 @@ def main(argv=None):
     instances = '../../Data/Validation/Instances.csv'
     bagMembership = '../../Data/Validation/BagMembership.csv'
 
-    modelPattern = "Out/Training/%s_%s_k%s_1.model"
-    numberOfClusters = ['5', '10', '15', '20', '25', '30']
+    modelPattern = "Out/Training/MaxIterations1000/%s_%s_k%s_1.model"
+    numberOfClusters = ['5', '10', '20', ]#'25', '30']
     params = {
         'histograms' : '24',
     }
 
     for k in numberOfClusters:
-        out = 'Out/Validation/%s_%s_k%s' % (experiment + (k,))
+        out = 'Out/Validation/MaxIterations1000/%s_%s_k%s' % (experiment + (k,))
         cmd = [
             prog,
             "--instances", instances,
