@@ -1,9 +1,10 @@
 cmake_minimum_required( VERSION 2.8.6 FATAL_ERROR )
 
+# We want C++11
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -DHAVE_GLOG" CACHE STRING "Flags used by the compiler during all build types")
+
 project( EmphysemaEstimation )
 
-# We want C++11
-# set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11")
 
 # Help cmake find itk
 find_package( ITK REQUIRED )
@@ -53,3 +54,5 @@ add_subdirectory( Scripts )
 add_subdirectory( Statistics )
 add_subdirectory( Util )
 add_subdirectory( Test )
+
+
