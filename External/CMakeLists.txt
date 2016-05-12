@@ -1,3 +1,3 @@
 project( EE_External )
 
-add_subdirectory( googletest-release-1.7.0 )
+#add_subdirectory( googletest-release-1.7.0 )

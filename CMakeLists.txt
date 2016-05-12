@@ -6,7 +6,6 @@ project( EmphysemaEstimation )
 # set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11")
 
 # Help cmake find itk
-set( CMAKE_PREFIX_PATH "External/ITK-build" )
 find_package( ITK REQUIRED )
 include( ${ITK_USE_FILE} )
 
@@ -25,10 +24,6 @@ include_directories( Clustering/include )
 include_directories( ClusterLabeling/include )
 include_directories( Common/include )
 include_directories( Distances/include )
-include_directories( External/eigen-eigen-c58038c56923 )
-include_directories( External/flann-1.8.4-src/src/cpp )
-include_directories( External/googletest-release-1.7.0/include )
-include_directories( External/tclap-1.2.1/include )
 include_directories( FeatureExtraction/include )
 include_directories( Filtering/include )
 include_directories( IO/include )

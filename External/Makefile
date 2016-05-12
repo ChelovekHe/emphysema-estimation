@@ -26,16 +26,12 @@ GLOG_ARCHIVE = ${GLOG_SRC_DIR}.tar.gz
 
 CMAES_SRC_DIR = libcmaes-0.9.5
 CMAES_ARCHIVE = ${CMAES_SRC_DIR}.tar.gz
-CMAES_CONFIGURE_FLAGS = --prefix=${EXTERNAL_DIR}\
-			--with-eigen3-include=${EXTERNAL_DIR}/${EIGEN_SRC_DIR}
+CMAES_CONFIGURE_FLAGS = --prefix=${EXTERNAL_DIR}
 
 CERES_SRC_DIR = ceres-solver-1.11.0
 CERES_ARCHIVE = ${CERES_SRC_DIR}.tar.gz
 CERES_BUILD_DIR = CERES-build
-CERES_CMAKE_FLAGS = -DEIGEN_INCLUDE_DIR=../eigen-eigen-c58038c56923\
-		    -DGLOG_INCLUDE_DIR=../include\
-		    -DGLOG_LIBRARY=../lib/libglog.a\
-		    -DCMAKE_BUILD_TYPE=Release\
+CERES_CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Release\
 		    -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}\
 		    -DCXX11=ON
 
@@ -53,7 +49,7 @@ GTEST_ARCHIVE = ${GTEST_SRC_DIR}.tar.gz
 GTEST_BUILD_DIR = GTEST-build
 
 
-all: tclap itk flann eigen ceres
+all: ceres cmaes #tclap glog gtest flann eigen ceres itk
 
 tclap: ${TCLAP_ARCHIVE}
 	${TAR} ${TAR_GUNZIP_FLAGS} $^ 
