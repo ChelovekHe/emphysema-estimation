@@ -13,6 +13,7 @@ set( progs
   TrainClusterModelContinuous
   TrainClusterModelBinary
   TrainClusterModelIntervals
+  TrainClusterModelIntervalsNoW
   PredictClusterModel
   PredictInstancesCMS
   )

@@ -30,7 +30,7 @@ def main(argv=None):
     regions = ['ERU', 'ELU',]
     for region in regions:
         for k in params[region]['k']:
-            out = 'Out/CombinedTrainingValidation/Predictions/%s_%s_%s_k%s' % (experiment + (region, k,))
+            out = 'Out/NoCMAES/CombinedTrainingValidation/Predictions/%s_%s_%s_k%s' % (experiment + (region, k,))
             cmd = [
                 progs['Intervals'],
                 "--instances", instances[region],

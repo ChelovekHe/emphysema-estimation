@@ -19,6 +19,7 @@ CalculateICC <- function(visualScoresPath, iccType, predictionPath, id, region) 
 
     cat('k,Region,Raters,ICC,CI.low,CI.high\n')
     predictions <- read.csv(predictionPath, header=TRUE);
+    print( predictions )
     scores <- merge(visualScores, predictions, by='IdDate');
 
     ## Convert classes and predictions to midpoints of intervals

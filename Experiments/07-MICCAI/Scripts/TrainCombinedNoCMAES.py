@@ -5,7 +5,7 @@ def main(argv=None):
     experiment = ('Intervals', 'EmphysemaExtentRegions')
     
     progs = {
-        'Intervals' : '../../Build/Classification/TrainClusterModelIntervals',
+        'Intervals' : '../../Build/Classification/TrainClusterModelIntervalsNoW',
     }
 
     labels = {
@@ -41,10 +41,10 @@ def main(argv=None):
         'kmeans-iterations' : '25',
     }
 
-    regions = ['ERU', 'ELU',]
+    regions = ['ERU', ]
     for region in regions:
         for k in params[region]['k']:
-            out = 'Out/CombinedTrainingValidation/Models/%s_%s_%s_k%s' % (experiment + (region, k,))
+            out = 'Out/NoCMAES/CombinedTrainingValidation/Models/%s_%s_%s_k%s' % (experiment + (region, k,))
             cmd = [
                 progs[experiment[0]], 
                 "--instances", instances[region],

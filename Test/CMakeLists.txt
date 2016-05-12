@@ -12,13 +12,15 @@ set( LIBS
   )
 
 set( progs
-  ClusterLabellerTest
-  ClusterModelTest
-  CrossValidatorTest
+  BaggedDatasetTest
+  CMSModelTest
+  CMSTrainerTest
   DenseHistogramTest
-  DetermineEdgesForEqualizedHistogramTest
   EigenvaluesTest
+  GreedyBinaryClusterLabelerTest
   HausdorffTest
+  IntervalLossesTest
+  IntervalRiskTest
   WeightedEarthMoversDistanceTest
   )
 
@@ -26,10 +28,17 @@ foreach( prog ${progs} )
   add_executable( ${prog} ${prog}.cxx )
   target_link_libraries( ${prog} ${LIBS} )
   install( TARGETS ${prog} DESTINATION bin )
-  add_test( NAME ${prog} COMMAND ${prog} --gtest_repeat=1000 )
+  add_test( NAME ${prog} COMMAND ${prog} --gtest_repeat=1 )
 endforeach( prog )
 
-add_custom_command(
-  TARGET ClusterModelTest POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-  ${CMAKE_SOURCE_DIR}/Test/Data $<TARGET_FILE_DIR:ClusterModelTest>/Data)
+# add_custom_command(
+#   TARGET ClusterModelTest POST_BUILD
+#   COMMAND ${CMAKE_COMMAND} -E copy_directory
+#   ${CMAKE_SOURCE_DIR}/Test/Data $<TARGET_FILE_DIR:ClusterModelTest>/Data)
+
+
+#  ClusterLabellerTest
+#  ClusterModelTest
+#  CrossValidatorTest
+#  
+#  
