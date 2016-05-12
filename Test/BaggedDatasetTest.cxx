@@ -11,10 +11,12 @@
 
 #include "BaggedDataset.h"
 
+const size_t InstanceLabelDim = 3;
+const size_t BagLabelDim = 2;
+
+
 class BaggedDatasetTest : public ::testing::Test {
 public:
-  static const size_t InstanceLabelDim = 3;
-  static const size_t BagLabelDim = 2;
   typedef BaggedDataset< BagLabelDim, InstanceLabelDim > BaggedDatasetType;
   typedef BaggedDatasetType::MatrixType MatrixType;
   typedef BaggedDatasetType::IndexVectorType IndexVectorType;
@@ -105,6 +107,31 @@ TEST_F( BaggedDatasetTest, BadBagMembershipIndex ) {
 };
 
 
+TEST_F( BaggedDatasetTest, Equal ) {
+  ASSERT_EQ( bags, bags );
+}
+
+TEST_F( BaggedDatasetTest, CopyCtor ) {
+  auto bags2 = bags;
+  ASSERT_EQ( bags, bags2 );
+}
+
+TEST_F( BaggedDatasetTest, NotEqual ) {
+  auto bags2 = BaggedDatasetType::Random(numberOfBags, bagSize, dimension );
+  ASSERT_NE( bags, bags2 );
+}
+
+
+TEST_F( BaggedDatasetTest, LoadSave ) {  
+  std::string path = "BaggedDatasetTest.LoadSave.bags";
+  std::ofstream os( path );
+  bags.Save( os );
+
+  std::ifstream is( path );
+  BaggedDatasetType bags2 = BaggedDatasetType::Load( is );
+
+  ASSERT_EQ( bags, bags2 );
+}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
